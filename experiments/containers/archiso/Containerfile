@@ -1,0 +1,16 @@
+# Official Arch Linux base-devel image, pinned to its dated build.
+FROM archlinux/archlinux:base-devel-20261102.0.620672
+
+ARG ARCHIVE_DATE=2026/11/02
+LABEL org.opencontainers.image.title="Aether Archiso builder"
+LABEL org.aether.builder="archiso"
+LABEL org.aether.archive-date="${ARCHIVE_DATE}"
+
+RUN pacman-key --init \
+    && pacman-key --populate archlinux \
+    && printf '[options]\nArchitecture = auto\nSigLevel = Required DatabaseOptional\n\n[core]\nServer = https://archive.archlinux.org/repos/%s/$repo/os/$arch\n\n[extra]\nServer = https://archive.archlinux.org/repos/%s/$repo/os/$arch\n' "${ARCHIVE_DATE}" "${ARCHIVE_DATE}" > /tmp/aether-pacman.conf \
+    && pacman --config /tmp/aether-pacman.conf -Syyu --noconfirm archiso git python \
+    && rm -f /tmp/aether-pacman.conf
+
+WORKDIR /workspace
+CMD ["bash"]

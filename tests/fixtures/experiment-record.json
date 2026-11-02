@@ -8,5 +8,6 @@
   "expected": "Find an available VM hypervisor",
   "actual": "Neither command was found in PATH",
   "evidence": ["Sprint 0 environment inspection, 2026-11-03"],
-  "limitations": ["This does not prove that no hypervisor is installed or usable by another method"]
+  "limitations": ["This does not prove that no hypervisor is installed or usable by another method"],
+  "blockers": ["No disposable VM capability was verified"]
 }

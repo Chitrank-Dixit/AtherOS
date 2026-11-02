@@ -1,0 +1,14 @@
+{
+  "fixture_only": true,
+  "id": "EXAMPLE-BLOCKED",
+  "status": "BLOCKED",
+  "environment": "Synthetic schema fixture; no system experiment represented",
+  "os_revision": "example-only",
+  "package_revisions": [],
+  "commands": [],
+  "expected": "Example illustrates the BLOCKED record shape",
+  "actual": "No operation was attempted in this synthetic example",
+  "evidence": [],
+  "limitations": ["Synthetic fixture only"],
+  "blockers": ["Example prerequisite not available; illustrative text, not an observed blocker"]
+}

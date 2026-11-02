@@ -84,3 +84,7 @@ jobs:
           tests/fixtures/experiment-record-passed.json
           tests/fixtures/experiment-record-failed.json
           tests/fixtures/experiment-record-not-tested.json
+          tests/fixtures/experiment-records/passed.example.json
+          tests/fixtures/experiment-records/failed.example.json
+          tests/fixtures/experiment-records/blocked.example.json
+          tests/fixtures/experiment-records/not-tested.example.json

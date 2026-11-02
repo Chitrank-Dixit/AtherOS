@@ -1,0 +1,13 @@
+{
+  "fixture_only": true,
+  "id": "EXAMPLE-NOT-TESTED",
+  "status": "NOT TESTED",
+  "environment": "Synthetic schema fixture; no system experiment represented",
+  "os_revision": "example-only",
+  "package_revisions": [],
+  "commands": [],
+  "expected": "Example illustrates the NOT TESTED record shape",
+  "actual": "No test was attempted in this synthetic example",
+  "evidence": [],
+  "limitations": ["Synthetic fixture only; replace with a specific reason test was deliberately not run"]
+}

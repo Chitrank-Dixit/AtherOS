@@ -1,0 +1,9 @@
+# NixOS's official Nix image, pinned to the verified linux/amd64 manifest digest.
+FROM ghcr.io/nixos/nix:2.35.4@sha256:05fe61395588e8a11452e9ba4602d4f0eb0ce5db8f7b9fa417c4ec07af79ca42
+
+LABEL org.opencontainers.image.title="Aether NixOS ISO builder"
+LABEL org.aether.builder="nixos"
+LABEL org.aether.nix-version="2.35.4"
+
+WORKDIR /workspace
+CMD ["nix", "--version"]

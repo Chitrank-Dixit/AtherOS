@@ -7,7 +7,27 @@
   "properties": {
     "id": {"type": "string", "minLength": 1},
     "status": {"enum": ["PASSED", "FAILED", "BLOCKED", "NOT TESTED"]},
+    "fixture_only": {"type": "boolean", "default": false, "description": "True only for synthetic schema examples; never use as execution evidence."},
     "environment": {"type": "string"},
+    "distribution": {"type": "string", "minLength": 1},
+    "distribution_revision": {"type": "string", "minLength": 1},
+    "builder_environment": {"type": "string", "minLength": 1},
+    "iso_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "build_status": {"enum": ["PASSED", "FAILED", "BLOCKED", "NOT TESTED"]},
+    "boot_status": {"enum": ["PASSED", "FAILED", "BLOCKED", "NOT TESTED"]},
+    "uefi_firmware": {"type": "string"},
+    "vm_configuration": {
+      "type": "object",
+      "properties": {
+        "hypervisor": {"type": "string"},
+        "architecture": {"type": "string"},
+        "cpu_count": {"type": "integer", "minimum": 1},
+        "memory_mib": {"type": "integer", "minimum": 1},
+        "firmware": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "logs": {"type": "array", "items": {"type": "string", "minLength": 1}},
     "os_revision": {"type": "string", "minLength": 1},
     "package_revisions": {
       "type": "array",
@@ -24,8 +44,14 @@
     "commands": {"type": "array", "items": {"type": "string"}},
     "expected": {"type": "string"},
     "actual": {"type": "string"},
-    "evidence": {"type": "array", "items": {"type": "string"}},
-    "limitations": {"type": "array", "items": {"type": "string"}}
+    "evidence": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "limitations": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "blockers": {"type": "array", "items": {"type": "string", "minLength": 1}}
   },
+  "allOf": [
+    {"if": {"properties": {"status": {"enum": ["PASSED", "FAILED"]}}, "required": ["status"]}, "then": {"properties": {"evidence": {"minItems": 1}}}},
+    {"if": {"properties": {"status": {"const": "BLOCKED"}}, "required": ["status"]}, "then": {"required": ["blockers"], "properties": {"blockers": {"minItems": 1}}}},
+    {"if": {"properties": {"status": {"const": "NOT TESTED"}}, "required": ["status"]}, "then": {"required": ["limitations"], "properties": {"limitations": {"minItems": 1}}}}
+  ],
   "additionalProperties": false
 }
