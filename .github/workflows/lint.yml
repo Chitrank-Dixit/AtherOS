@@ -8,29 +8,79 @@ permissions:
   contents: read
 
 jobs:
-  lint:
+  markdown:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
       - name: Markdown lint
-        run: npx --yes markdownlint-cli2 '**/*.md' '.github/**/*.md'
-      - uses: actions/setup-python@v5
+        run: npx --yes markdownlint-cli2@0.24.0 '**/*.md' '.github/**/*.md'
+
+  python-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
         with:
           python-version: '3.11'
-      - name: Install Python checkers
-        run: python -m pip install ruff pyright yamllint check-jsonschema
-      - name: Ruff
+      - name: Install Ruff
+        run: python -m pip install ruff
+      - name: Lint Python
         run: ruff check scripts
-      - name: Pyright
-        run: pyright scripts
-      - name: ShellCheck
-        uses: ludeeus/action-shellcheck@2.0.0
+
+  python-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
         with:
-          scandir: .
-      - name: YAML validation
+          python-version: '3.11'
+      - name: Install Pyright
+        run: python -m pip install pyright
+      - name: Type-check Python
+        run: pyright scripts
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends shellcheck
+      - name: Lint shell scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          find scripts experiments -type f -name '*.sh' -print0 | xargs -0 --no-run-if-empty shellcheck
+
+  yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.11'
+      - name: Install yamllint
+        run: python -m pip install yamllint
+      - name: Validate YAML
         run: yamllint .
-      - name: JSON Schema validation
-        run: check-jsonschema --schemafile schemas/experiment-record.schema.json tests/fixtures/experiment-record.json
+
+  json-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.11'
+      - name: Install check-jsonschema
+        run: python -m pip install check-jsonschema
+      - name: Validate experiment records
+        run: >-
+          check-jsonschema --schemafile schemas/experiment-record.schema.json
+          tests/fixtures/experiment-record.json
+          tests/fixtures/experiment-record-passed.json
+          tests/fixtures/experiment-record-failed.json
+          tests/fixtures/experiment-record-not-tested.json

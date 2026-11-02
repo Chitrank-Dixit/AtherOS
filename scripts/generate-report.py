@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the checked-in Sprint 0 report."""
+"""Print the manually authored Sprint 0 report; see the report-generation notes."""
 
 from pathlib import Path
 

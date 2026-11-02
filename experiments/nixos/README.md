@@ -3,6 +3,7 @@
 Status: **BLOCKED**; Nix was not available in the current environment and no NixOS VM/ISO was built or booted.
 
 ## Reproduction sequence
+
 1. Use a disposable Linux builder with Nix and flakes enabled; do not modify host WSL or Windows configuration to obtain it.
 2. From the repository root, run `make validate-nixos`.
 3. Run `nix flake lock ./experiments/nixos` to resolve the input, then review and commit `experiments/nixos/flake.lock`; record the resulting nixpkgs revision.

@@ -21,12 +21,19 @@ class RepositoryToolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Sprint 0 report", result.stdout)
 
-    def test_blocked_experiment_fixture_matches_required_shape(self) -> None:
+    def test_experiment_fixtures_cover_each_status_and_required_field(self) -> None:
         schema = json.loads((ROOT / "schemas/experiment-record.schema.json").read_text())
-        record = json.loads((ROOT / "tests/fixtures/experiment-record.json").read_text())
-        self.assertTrue(set(schema["required"]).issubset(record))
-        self.assertIn(record["status"], schema["properties"]["status"]["enum"])
-        self.assertEqual(set(record), set(schema["properties"]))
+        fixtures = sorted((ROOT / "tests/fixtures").glob("experiment-record*.json"))
+        records = [json.loads(path.read_text(encoding="utf-8")) for path in fixtures]
+        statuses = {record["status"] for record in records}
+
+        self.assertEqual(
+            statuses,
+            set(schema["properties"]["status"]["enum"]),
+        )
+        for record in records:
+            self.assertTrue(set(schema["required"]).issubset(record))
+            self.assertEqual(set(record), set(schema["properties"]))
 
 
 if __name__ == "__main__":

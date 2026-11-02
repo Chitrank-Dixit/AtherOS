@@ -1,0 +1,12 @@
+base
+linux
+linux-firmware
+networkmanager
+gnome
+gdm
+pipewire
+pipewire-alsa
+pipewire-pulse
+wireplumber
+xdg-desktop-portal
+xdg-desktop-portal-gnome

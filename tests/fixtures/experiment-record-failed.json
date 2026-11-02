@@ -1,0 +1,15 @@
+{
+  "id": "S0-CI-MARKDOWN-LINT",
+  "status": "FAILED",
+  "environment": "GitHub Actions lint run 41515005989",
+  "os_revision": "Ubuntu 26.04.1 LTS; ubuntu-26.04 image 20261025.179.1",
+  "package_revisions": [
+    {"name": "markdownlint-cli2", "revision": "0.24.0"},
+    {"name": "markdownlint", "revision": "0.42.0"}
+  ],
+  "commands": ["npx --yes markdownlint-cli2 '**/*.md' '.github/**/*.md'"],
+  "expected": "Markdown lint reports no violations",
+  "actual": "31 MD022 heading spacing violations were reported across 12 Markdown files",
+  "evidence": ["https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41515005989"],
+  "limitations": ["This result records the pre-remediation main-branch run; it says nothing about the remediation branch"]
+}

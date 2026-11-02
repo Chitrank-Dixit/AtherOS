@@ -1,0 +1,12 @@
+{
+  "id": "S0-NVIDIA-PHYSICAL",
+  "status": "NOT TESTED",
+  "environment": "Target hardware from project brief: Ryzen 7 9700X, MSI MAG B850 Tomahawk WiFi, RTX 5060 Ti 16 GB, 32 GB DDR5",
+  "os_revision": "Windows host; Linux live-USB session not performed",
+  "package_revisions": [],
+  "commands": [],
+  "expected": "Boot a Linux live USB and record NVIDIA driver, Wayland, CUDA, suspend, and multi-monitor behavior after explicit approval",
+  "actual": "No physical hardware test was performed",
+  "evidence": ["docs/research/nvidia-compatibility.md"],
+  "limitations": ["Documentation findings and VM graphics cannot establish target GPU compatibility"]
+}

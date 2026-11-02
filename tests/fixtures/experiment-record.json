@@ -2,6 +2,8 @@
   "id": "S0-VM-ARCH",
   "status": "BLOCKED",
   "environment": "Windows workspace; no disposable Linux VM demonstrated",
+  "os_revision": "Windows host; exact build not captured",
+  "package_revisions": [],
   "commands": ["Get-Command qemu-system-x86_64, VBoxManage"],
   "expected": "Find an available VM hypervisor",
   "actual": "Neither command was found in PATH",

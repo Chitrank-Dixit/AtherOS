@@ -8,5 +8,13 @@
     "MD060": false,
     "MD041": false
   },
-  "globs": ["**/*.md", "!out/**", "!result/**"]
+  "globs": [
+    "**/*.md",
+    "!out/**",
+    "!build/**",
+    "!dist/**",
+    "!result/**",
+    "!result-*/**",
+    "!.git/**"
+  ]
 }

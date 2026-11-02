@@ -3,11 +3,24 @@
   "$id": "https://aether-linux.example/schemas/experiment-record.schema.json",
   "title": "Aether experiment record",
   "type": "object",
-  "required": ["id", "status", "environment", "commands", "expected", "actual", "evidence", "limitations"],
+  "required": ["id", "status", "environment", "os_revision", "package_revisions", "commands", "expected", "actual", "evidence", "limitations"],
   "properties": {
     "id": {"type": "string", "minLength": 1},
     "status": {"enum": ["PASSED", "FAILED", "BLOCKED", "NOT TESTED"]},
     "environment": {"type": "string"},
+    "os_revision": {"type": "string", "minLength": 1},
+    "package_revisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "revision"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "revision": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
     "commands": {"type": "array", "items": {"type": "string"}},
     "expected": {"type": "string"},
     "actual": {"type": "string"},
