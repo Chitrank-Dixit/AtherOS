@@ -1,0 +1,19 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate repository and script syntax
+        run: bash scripts/validate-repository.sh
+      - name: Run lightweight checks
+        run: make test

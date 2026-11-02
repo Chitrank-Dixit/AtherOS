@@ -1,0 +1,10 @@
+{
+  "id": "S0-VM-ARCH",
+  "status": "BLOCKED",
+  "environment": "Windows workspace; no disposable Linux VM demonstrated",
+  "commands": ["Get-Command qemu-system-x86_64, VBoxManage"],
+  "expected": "Find an available VM hypervisor",
+  "actual": "Neither command was found in PATH",
+  "evidence": ["Sprint 0 environment inspection, 2026-11-03"],
+  "limitations": ["This does not prove that no hypervisor is installed or usable by another method"]
+}
