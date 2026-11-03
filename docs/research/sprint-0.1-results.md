@@ -2,7 +2,7 @@
 
 ## Evidence status
 
-This report reflects reviewed PR head `3be9b87481796dccceb6706991d11954754f1408` and its GitHub Actions run 11 results. The Validate workflow and all Lint jobs except Ruff passed. A local Ruff import-order correction and report updates are currently uncommitted and have not been CI-validated. Windows-side diagnostics ran previously; WSL enumeration and the Podman engine remain inaccessible. No Linux ISO build or UEFI boot was attempted.
+This report reflects PR head `c0fd3b9a7bb90f41accdf9ea80ff7dbe42b5abf5` and GitHub Actions run 13. [Validate #13](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41665401496) passed, including all 29 unit tests and JSON Schema validation. [Lint #13](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41665401500) failed only in Ruff with I001 in `scripts/experiments/arch_build_result.py`; Markdown lint, ShellCheck, Pyright, YAML validation, and the Lint JSON Schema job passed. A new run after the current remediation has not yet confirmed results. These are CI observations, separate from local Windows/WSL checks. WSL enumeration and the Podman engine remain inaccessible. No Linux ISO build or UEFI boot was attempted.
 
 | Acceptance criterion | Status | Evidence / next step |
 | --- | --- | --- |
@@ -14,8 +14,8 @@ This report reflects reviewed PR head `3be9b87481796dccceb6706991d11954754f1408`
 | AC-06 NixOS ISO builds | BLOCKED | Depends on a reviewed lock and disposable Nix builder. |
 | AC-07 Arch ISO boots in UEFI VM | BLOCKED | Requires a generated ISO and available QEMU/UEFI disposable VM. |
 | AC-08 NixOS ISO boots in UEFI VM | BLOCKED | Requires a generated ISO and available QEMU/UEFI disposable VM. |
-| AC-09 Experiment schema validates | PASSED | Draft 2020-12 validation passed in both [Lint run 11](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41663324475) and [Validate run 11](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41663324521). |
-| AC-10 CI checks pass | FAILED | Validate run 11 passed. Lint run 11 failed only on Ruff import ordering; Markdown, YAML, ShellCheck, Pyright, and JSON Schema jobs passed. |
+| AC-09 Experiment schema validates | PASSED | Draft 2020-12 validation passed in both [Lint #13](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41665401500) and [Validate #13](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41665401496). |
+| AC-10 CI checks pass | FAILED | Validate #13 passed. Lint #13 failed only on Ruff import ordering; Markdown, YAML, ShellCheck, Pyright, and JSON Schema jobs passed. New CI results after remediation are pending. |
 | AC-11 Results documented | PASSED | This report and the implementation audit capture current statuses and blockers. |
 
 ## Commands executed
@@ -32,11 +32,11 @@ ADR-007 accepts Podman as the primary local container runtime. Independent OCI b
 
 ## PR #1 final review remediation and CI evidence
 
-The Nix/Arch record, result-link, and evidence regression tests passed in Validate run 11 at the reviewed commit. CI also passed repository/shell validation, JSON Schema validation, ShellCheck, Pyright, YAML lint, and Markdown lint. Ruff was the only failing CI job. The focused import-order correction and these report updates are local and still need CI verification. Locally, the Python alias and Ruff are unavailable, so no local Python lint or unit-test result is claimed. The read-only Podman diagnostic previously found client 6.1.4 but could not access the existing machine identity; rootless operation on this development machine remains NOT TESTED.
+The Nix/Arch record, result-link, and evidence regression tests passed in Validate #13 at PR head `c0fd3b9a7bb90f41accdf9ea80ff7dbe42b5abf5`. CI also passed repository/shell validation, JSON Schema validation, ShellCheck, Pyright, YAML validation, and Markdown lint. Ruff was the only failing CI job. Local `ruff check --fix` could not be run because Ruff is not installed; `uvx` could not retrieve it because network access to PyPI is denied. No local Ruff result is claimed, and this remediation has not yet received a new CI run. The read-only Podman diagnostic previously found client 6.1.4 but could not access the existing machine identity; rootless operation on this development machine remains NOT TESTED.
 
 ## Review-remediation implementation status
 
-The reviewed implementation corrects optional-property assertions, routes record/report checks through the pinned Draft 2020-12 validator, adds schema and artifact-discovery regression tests, introduces recursive Nix ISO discovery with store-boundary checks, requires digest-pinned dated Arch base inputs for container builds, separates Arch build/artifact/checksum/manifest statuses, adds failure records, corrects ADR references, and emits a UEFI record template whose milestones remain NOT TESTED. At reviewed commit `3be9b87481796dccceb6706991d11954754f1408`, the Validate workflow passed unit tests and repository validation; Lint passed JSON Schema, ShellCheck, Pyright, Markdown, and YAML checks but failed Ruff import ordering. These are CI results, not local validation. The current local import-order correction has not yet been run by Ruff or CI.
+The reviewed implementation corrects optional-property assertions, routes record/report checks through the pinned Draft 2020-12 validator, adds schema and artifact-discovery regression tests, introduces recursive Nix ISO discovery with store-boundary checks, requires digest-pinned dated Arch base inputs for container builds, separates Arch build/artifact/checksum/manifest statuses, adds failure records, corrects ADR references, and emits a UEFI record template whose milestones remain NOT TESTED. At PR head `c0fd3b9a7bb90f41accdf9ea80ff7dbe42b5abf5`, Validate #13 passed unit tests and repository validation; Lint #13 passed JSON Schema, ShellCheck, Pyright, Markdown, and YAML checks but failed Ruff import-block formatting. This remediation removes the extra blank line identified by Ruff's I001 diagnostic; the change cannot be counted as verified until Ruff and CI are rerun.
 
 ## Outstanding evidence
 

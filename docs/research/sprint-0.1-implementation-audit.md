@@ -2,14 +2,14 @@
 
 **Audit date:** 2026-11-03  
 **Branch:** `research/build-environment`  
-**Reviewed commit:** `3be9b87481796dccceb6706991d11954754f1408`
-**Worktree at start of this remediation:** clean on `research/build-environment`. This pass's import-order correction and report updates are local and uncommitted.
+**Reviewed PR head:** `c0fd3b9a7bb90f41accdf9ea80ff7dbe42b5abf5`
+**Worktree at start of this remediation:** clean on `research/build-environment`, tracking the same remote head. The Ruff formatting adjustment and report updates in this pass are local and await CI verification.
 
 ## Summary
 
-The reviewed branch contains Sprint 0.1 implementation artifacts, including Arch/Nix build wrappers, diagnostics, a QEMU live-ISO harness, experiment records, documentation, and Podman builders. CI at the reviewed commit passed the Validate workflow and all Lint jobs except Ruff's Python lint job. CI unit tests, repository validation, JSON Schema validation, ShellCheck, Pyright, YAML lint, and Markdown lint passed. This is CI evidence; it does not establish that these checks passed in the local Windows environment. No successful ISO build or boot has been established.
+The reviewed branch contains Sprint 0.1 implementation artifacts, including Arch/Nix build wrappers, diagnostics, a QEMU live-ISO harness, experiment records, documentation, and Podman builders. At PR head `c0fd3b9a7bb90f41accdf9ea80ff7dbe42b5abf5`, [Validate #13](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41665401496) passed, including 29 unit tests and JSON Schema validation. [Lint #13](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41665401500) failed only in Ruff with I001 in `scripts/experiments/arch_build_result.py`; Markdown lint, ShellCheck, Pyright, YAML validation, and the separate JSON Schema job passed. These are CI results and do not establish local Windows/WSL validation. No successful ISO build or boot has been established.
 
-The checked-out branch is `research/build-environment` and tracks `origin/research/build-environment`. It began at reviewed commit `3be9b87481796dccceb6706991d11954754f1408` with a clean worktree. The focused Ruff import-order and report corrections in this pass remain uncommitted and have not been CI-validated.
+The checked-out branch is `research/build-environment` and tracks `origin/research/build-environment`. It began at PR head `c0fd3b9a7bb90f41accdf9ea80ff7dbe42b5abf5` with a clean worktree. This remediation has not yet received a new CI run.
 
 ## Implemented functionality
 
@@ -55,8 +55,8 @@ All listed Podman commands were read-only.
 - PowerShell JSON parsing for the schema and eight JSON fixtures: passed. This checks JSON syntax only, not schema conformance.
 - Repository validation: required-file checks and shell syntax passed, then stopped at Python compilation because the WindowsApps `python3` executable returned Permission denied.
 - Direct Nix artifact-helper smoke testing in Git Bash was attempted, but the Windows filesystem symlink created by `ln -s` was not recognized by Bash as a symlink (`-L` false). The Linux symlink-based unit cases are therefore NOT TESTED on this host.
-- At reviewed commit `3be9b87481796dccceb6706991d11954754f1408`, the [Validate workflow](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41663324521) passed, including repository validation and all unit tests. The [Lint workflow](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41663324475) passed its JSON Schema, Markdown, YAML, ShellCheck, and Pyright jobs and failed only at Ruff import ordering.
-- Local Ruff, Pyright, unit tests, JSON Schema validation, ShellCheck, Markdown lint, and YAML lint remain NOT TESTED because their tools are unavailable or inaccessible in the Windows environment. The local Ruff correction in this pass is not covered by the cited CI run.
+- At PR head `c0fd3b9a7bb90f41accdf9ea80ff7dbe42b5abf5`, the [Validate #13 workflow](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41665401496) passed, including repository validation and all 29 unit tests. The [Lint #13 workflow](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41665401500) passed JSON Schema, Markdown, YAML, ShellCheck, and Pyright; its Ruff job failed only on I001 import ordering. This CI evidence does not imply that local checks passed.
+- Local Ruff has not been rerun: `ruff` is absent, and `uvx ruff` could not download Ruff because network access to PyPI is denied. The other local checks described above remain unavailable/inaccessible; this remediation has not yet received CI verification.
 - Arch/Nix ISO builds and UEFI boots: BLOCKED / NOT TESTED; no suitable builder, reviewed Nix lock, generated ISO, or disposable UEFI test environment is available.
 
 ## Acceptance criteria
@@ -71,8 +71,8 @@ All listed Podman commands were read-only.
 | AC-06 NixOS ISO builds | BLOCKED | Depends on a generated/reviewed lock and isolated Nix builder. |
 | AC-07 Arch ISO boots in UEFI VM | BLOCKED | No ISO or available disposable UEFI VM. |
 | AC-08 NixOS ISO boots in UEFI VM | BLOCKED | No ISO or available disposable UEFI VM. |
-| AC-09 Experiment schema validates | PASSED | Draft 2020-12 validation passed in both [Lint run 11](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41663324475) and [Validate run 11](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41663324521). |
-| AC-10 CI checks pass | FAILED | Validate run 11 passed. Lint run 11 failed only at Ruff import ordering; its Markdown, YAML, ShellCheck, Pyright, and JSON Schema jobs passed. |
+| AC-09 Experiment schema validates | PASSED | Draft 2020-12 validation passed in both [Lint #13](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41665401500) and [Validate #13](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41665401496). |
+| AC-10 CI checks pass | FAILED | Validate #13 passed. Lint #13 failed only at Ruff import ordering; its Markdown, YAML, ShellCheck, Pyright, and JSON Schema jobs passed. A new run is required after this remediation. |
 | AC-11 Results are documented | PASSED | `sprint-0.1-results.md` and this audit summarize current observations and explicitly mark unavailable checks. |
 
 ## Security and architectural assessment
@@ -87,4 +87,4 @@ The wrappers correctly refuse remote/rootful Podman and do not start existing ma
 - Nix build records capture failure stages. UEFI records leave all guest milestones NOT TESTED until an operator verifies them; QEMU exit status does not imply boot success.
 - Architecture and Podman guide references now point to ADR-007.
 
-The CI statements above apply to reviewed commit `3be9b87481796dccceb6706991d11954754f1408`; they do not verify the local import-order correction in this pass. The local Windows Python alias is inaccessible, and Ruff is unavailable locally. ISO builds and UEFI boot tests remain BLOCKED/NOT TESTED.
+The CI statements above apply to PR head `c0fd3b9a7bb90f41accdf9ea80ff7dbe42b5abf5`; they do not verify this pass's import-block formatting adjustment or report updates. The local Windows Python alias is inaccessible, Ruff is unavailable, and the attempted `uvx` fetch was blocked by network policy. ISO builds and UEFI boot tests remain BLOCKED/NOT TESTED.

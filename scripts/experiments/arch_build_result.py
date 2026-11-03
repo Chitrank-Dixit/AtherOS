@@ -11,7 +11,6 @@ from typing import Any
 
 import jsonschema.exceptions
 
-
 STAGE_STATUSES = ("PASSED", "FAILED", "BLOCKED", "NOT TESTED")
 
 
