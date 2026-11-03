@@ -25,6 +25,10 @@ for tool in mkarchiso pacman python3 sha256sum sha512sum; do
     exit 1
   fi
 done
+if ! python3 -c 'import jsonschema' >/dev/null 2>&1; then
+  echo 'BLOCKED: install the pinned development dependency from requirements-dev.txt to validate experiment records.' >&2
+  exit 1
+fi
 if [[ ${AETHER_ARCHISO_DISPOSABLE:-0} != 1 ]]; then
   echo 'BLOCKED: set AETHER_ARCHISO_DISPOSABLE=1 only inside a disposable Arch VM before building.' >&2
   exit 1
@@ -96,7 +100,6 @@ printf 'profile=%s\nsnapshot=%s\nbuilder=%s\nbase_image_ref=%s\nbase_image_diges
 printf 'reproducibility=EXPERIMENTAL: bootstrap image or disposable VM packages may not originate from the selected archive snapshot; pacman does not downgrade them\n' \
   >> "$out_dir/build-inputs.txt"
 
-stage=build
 set +e
 mkarchiso -v -C "$out_dir/repo-config/pacman.conf" -w "$out_dir/work" -o "$out_dir" "$profile" > "$out_dir/build.log" 2>&1
 build_status=$?
@@ -105,53 +108,16 @@ cat "$out_dir/build.log"
 printf 'exit_code=%s\n' "$build_status" > "$out_dir/build-result.txt"
 
 record() {
-  local overall="$1" artifact_status="$2" checksum_status="$3" manifest_status="$4" complete="$5" stage_name="$6" actual="$7" error="$8"
-  local blockers=''
-  local base_image_json=''
-  local builder_digest_json=''
-  local iso_checksum_json=''
-  local checksum_logs=''
-  if [[ $overall == BLOCKED ]]; then blockers=', "blockers": ["'"$error"'"]'; fi
-  if [[ $base_digest != not-applicable ]]; then
-    base_image_json=', "arch_base_image": "'"$base_image"'", "arch_base_image_digest": "'"$base_digest"'"'
-  fi
-  if [[ ${AETHER_BUILDER_IMAGE_DIGEST:-} =~ ^sha256:[a-f0-9]{64}$ ]]; then
-    builder_digest_json=', "builder_image_digest": "'"$AETHER_BUILDER_IMAGE_DIGEST"'"'
-  fi
-  if [[ -n ${iso_sha256:-} ]]; then
-    iso_checksum_json=', "iso_sha256": "'"$iso_sha256"'"'
-  fi
-  if [[ $checksum_status == PASSED ]]; then
-    checksum_logs=', "SHA256SUMS", "SHA512SUMS"'
-  fi
-  cat > "$out_dir/experiment-record.json" <<EOF
-{
-  "id": "ARCH-BUILD-$build_id",
-  "status": "$overall",
-  "distribution": "Arch Linux",
-  "distribution_revision": "$snapshot",
-  "builder_environment": "$(uname -srmo)",
-  "environment": "Disposable Linux builder; see build-inputs.txt",
-  "os_revision": "Arch Linux Archive $snapshot",
-  "package_revisions": [],
-  "commands": ["mkarchiso -v -C repo-config/pacman.conf -w work -o output profile"],
-  "expected": "Build the selected Archiso profile and collect its package manifest and checksums",
-  "actual": "$actual",
-  "evidence": ["build.log", "build-result.txt", "build-inputs.txt"],
-  "limitations": ["Archive packages and builder bootstrap state are separate provenance inputs; binary reproducibility is not claimed"],
-  "logs": ["build.log", "metadata.txt", "manifest.log", "provenance.log", "package-manifest.txt"$checksum_logs],
-  "build_status": "$([[ $build_status == 0 ]] && echo PASSED || echo FAILED)",
-  "artifact_status": "$artifact_status",
-  "checksum_status": "$checksum_status",
-  "package_manifest_status": "$manifest_status",
-  "archiso_version_status": "$archiso_version_status",
-  "evidence_complete": $complete,
-  "build_stage": "$stage_name",
-  "error": "$error",
-  "arch_archive_snapshot": "$snapshot",
-  "package_manifest": "package-manifest.txt"$base_image_json$builder_digest_json$iso_checksum_json$blockers
-}
-EOF
+  local artifact_status="$2" checksum_status="$3" manifest_status="$4"
+  local stage_name="$6" actual="$7" error="$8"
+  local build_evidence=FAILED
+  [[ $build_status == 0 ]] && build_evidence=PASSED
+  python3 "$repo_root/scripts/experiments/arch_build_result.py" \
+    "$out_dir/experiment-record.json" "$repo_root/schemas/experiment-record.schema.json" \
+    "ARCH-BUILD-$build_id" "$snapshot" "$(uname -srmo)" "$build_evidence" \
+    "$artifact_status" "$checksum_status" "$manifest_status" "$archiso_version_status" \
+    "$stage_name" "$actual" "$error" "$base_image" "$base_digest" \
+    "${AETHER_BUILDER_IMAGE_DIGEST:-}" "${iso_sha256:-}"
 }
 
 if (( build_status != 0 )); then

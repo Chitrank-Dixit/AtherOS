@@ -3,8 +3,8 @@ import importlib.util
 import io
 import json
 import subprocess
-import tempfile
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -22,7 +22,10 @@ assert REPORT_SPEC is not None and REPORT_SPEC.loader is not None
 report_generator = importlib.util.module_from_spec(REPORT_SPEC)
 REPORT_SPEC.loader.exec_module(report_generator)
 NIXOS_ARTIFACT_HELPER = ROOT / "scripts/experiments/find-nixos-iso.sh"
+NIXOS_RECORD_PATH = ROOT / "scripts/experiments/nixos_record.py"
+NIXOS_RESULT_LINK_PATH = ROOT / "scripts/experiments/nixos_result_link.py"
 ARCH_EVIDENCE_PATH = ROOT / "scripts/experiments/arch_evidence.py"
+ARCH_BUILD_RESULT_PATH = ROOT / "scripts/experiments/arch_build_result.py"
 ARCH_EVIDENCE_SPEC = importlib.util.spec_from_file_location("arch_evidence", ARCH_EVIDENCE_PATH)
 assert ARCH_EVIDENCE_SPEC is not None and ARCH_EVIDENCE_SPEC.loader is not None
 arch_evidence = importlib.util.module_from_spec(ARCH_EVIDENCE_SPEC)
@@ -36,6 +39,193 @@ SCHEMA = json.loads((ROOT / "schemas/experiment-record.schema.json").read_text(e
 
 
 class ExperimentRecordTests(unittest.TestCase):
+    def run_arch_outcome(
+        self,
+        directory: Path,
+        *,
+        artifact: str = "PASSED",
+        checksum: str = "PASSED",
+        manifest: str = "PASSED",
+        archiso: str = "PASSED",
+    ) -> tuple[subprocess.CompletedProcess[str], dict[str, object]]:
+        output = directory / "experiment-record.json"
+        result = subprocess.run(
+            [
+                sys.executable, str(ARCH_BUILD_RESULT_PATH), str(output),
+                str(ROOT / "schemas/experiment-record.schema.json"), "ARCH-test",
+                "2026/11/02", "Linux x86_64", "PASSED", artifact, checksum, manifest,
+                archiso, "evidence", "controlled test outcome", "controlled evidence",
+                "not-applicable", "not-applicable", "", "",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        record = json.loads(output.read_text(encoding="utf-8"))
+        self.assertEqual([], list(Draft202012Validator(SCHEMA).iter_errors(record)))
+        return result, record
+
+    def test_arch_missing_manifest_fails_overall_experiment(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            result, record = self.run_arch_outcome(Path(temporary), manifest="FAILED")
+            self.assertEqual(1, result.returncode)
+            self.assertEqual("PASSED", record["build_status"])
+            self.assertEqual("PASSED", record["artifact_status"])
+            self.assertEqual("FAILED", record["package_manifest_status"])
+            self.assertFalse(record["evidence_complete"])
+            self.assertEqual("FAILED", record["status"])
+
+    def test_arch_missing_checksum_fails_overall_experiment(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            result, record = self.run_arch_outcome(Path(temporary), checksum="FAILED")
+            self.assertEqual(1, result.returncode)
+            self.assertEqual("FAILED", record["checksum_status"])
+            self.assertFalse(record["evidence_complete"])
+            self.assertEqual("FAILED", record["status"])
+
+    def test_arch_complete_evidence_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            result, record = self.run_arch_outcome(Path(temporary))
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("PASSED", record["status"])
+            self.assertTrue(record["evidence_complete"])
+            for field in (
+                "build_status", "artifact_status", "checksum_status",
+                "package_manifest_status", "archiso_version_status",
+            ):
+                self.assertEqual("PASSED", record[field])
+
+    def test_arch_missing_iso_fails_artifact_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            result, record = self.run_arch_outcome(Path(temporary), artifact="FAILED")
+            self.assertEqual(1, result.returncode)
+            self.assertEqual("FAILED", record["artifact_status"])
+            self.assertFalse(record["evidence_complete"])
+            self.assertEqual("FAILED", record["status"])
+
+    def test_nixos_record_round_trips_shell_sensitive_strings_and_schema(self) -> None:
+        from importlib.util import module_from_spec, spec_from_file_location
+
+        spec = spec_from_file_location("nixos_record", NIXOS_RECORD_PATH)
+        self.assertIsNotNone(spec)
+        assert spec is not None and spec.loader is not None
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        values = {
+            "id": "NIXOS-test",
+            "status": "FAILED",
+            "build_status": "PASSED",
+            "artifact_status": "FAILED",
+            "checksum_status": "NOT TESTED",
+            "complete": False,
+            "stage": 'artifact "quoted" \\ newline\n雪',
+            "revision": "rev\\with\nline",
+            "actual": 'quote " slash \\ newline\nUnicode 雪',
+            "error": "",
+            "relative_iso": "",
+            "checksum": "",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "record.json"
+            module.write_validated_record(
+                output, ROOT / "schemas/experiment-record.schema.json", values
+            )
+            record = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual([], list(Draft202012Validator(SCHEMA).iter_errors(record)))
+            self.assertEqual(values["actual"], record["actual"])
+            self.assertEqual(values["stage"], record["build_stage"])
+            self.assertEqual("", record["error"])
+            self.assertNotIn("artifact_relative_path", record)
+            self.assertNotIn("iso_sha256", record)
+
+    def run_result_link_helper(self, *arguments: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(NIXOS_RESULT_LINK_PATH), *arguments],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "requires POSIX symlinks")
+    def test_nixos_result_link_cleanup_only_unlinks_owned_symlink(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            target = base / "target"
+            target.mkdir()
+            link = base / "result"
+            link.symlink_to(target, target_is_directory=True)
+            identity = self.run_result_link_helper("identity", str(link))
+            self.assertEqual(0, identity.returncode, identity.stderr)
+            removed = self.run_result_link_helper("cleanup", str(link), identity.stdout.strip())
+            self.assertEqual(0, removed.returncode, removed.stderr)
+            self.assertFalse(link.is_symlink())
+            self.assertTrue(target.is_dir())
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "requires POSIX symlinks")
+    def test_nixos_result_link_cleanup_after_build_and_discovery_failures(self) -> None:
+        for stage in ("build-failure", "artifact-discovery-failure"):
+            with self.subTest(stage=stage), tempfile.TemporaryDirectory() as temporary:
+                base = Path(temporary)
+                target = base / "nix-store-result"
+                target.mkdir()
+                unrelated_file = base / "keep.txt"
+                unrelated_file.write_text("keep", encoding="utf-8")
+                unrelated_directory = base / "keep-dir"
+                unrelated_directory.mkdir()
+                link = base / "owned-result"
+                link.symlink_to(target, target_is_directory=True)
+                identity = self.run_result_link_helper("identity", str(link)).stdout.strip()
+                cleaned = self.run_result_link_helper("cleanup", str(link), identity)
+                self.assertEqual(0, cleaned.returncode, cleaned.stderr)
+                self.assertFalse(link.is_symlink())
+                self.assertTrue(target.is_dir())
+                self.assertEqual("keep", unrelated_file.read_text(encoding="utf-8"))
+                self.assertTrue(unrelated_directory.is_dir())
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "requires POSIX symlinks")
+    def test_nixos_result_link_cleanup_preserves_preexisting_or_replaced_link(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            first = base / "first"
+            second = base / "second"
+            first.mkdir()
+            second.mkdir()
+            link = base / "result"
+            link.symlink_to(first, target_is_directory=True)
+            original = self.run_result_link_helper("identity", str(link)).stdout.strip()
+            preserved = self.run_result_link_helper("cleanup", str(link), "wrong-identity")
+            self.assertNotEqual(0, preserved.returncode)
+            link.unlink()
+            link.symlink_to(second, target_is_directory=True)
+            changed = self.run_result_link_helper("cleanup", str(link), original)
+            self.assertNotEqual(0, changed.returncode)
+            self.assertTrue(link.is_symlink())
+            self.assertTrue(first.is_dir())
+            self.assertTrue(second.is_dir())
+
+    def test_nixos_record_generation_rejects_invalid_schema_without_replacing_output(self) -> None:
+        from importlib.util import module_from_spec, spec_from_file_location
+
+        spec = spec_from_file_location("nixos_record_invalid", NIXOS_RECORD_PATH)
+        self.assertIsNotNone(spec)
+        assert spec is not None and spec.loader is not None
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "record.json"
+            output.write_text("previous", encoding="utf-8")
+            values = {
+                "id": "bad", "status": "PASSED", "build_status": "PASSED",
+                "artifact_status": "PASSED", "checksum_status": "PASSED",
+                "complete": True, "stage": "", "revision": "rev", "actual": "ok",
+                "error": "none", "relative_iso": "", "checksum": "",
+            }
+            with self.assertRaises(ValueError):
+                module.write_validated_record(
+                    output, ROOT / "schemas/experiment-record.schema.json", values
+                )
+            self.assertEqual("previous", output.read_text(encoding="utf-8"))
+
     def run_artifact_helper(
         self, link: Path, store: Path
     ) -> subprocess.CompletedProcess[str]:

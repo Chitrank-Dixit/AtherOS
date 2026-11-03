@@ -6,7 +6,7 @@ This repository's Nix experiment requires a reviewed `flake.lock`. Do not fabric
 
 ## Prerequisites and safety
 
-Use a disposable Linux VM designated for builds, with Nix supporting flakes, Git, GNU `find`, `realpath`, `sha256sum`, `sha512sum`, and enough free storage. Do not use a persistent WSL distribution as a disposable builder. `AETHER_NIXOS_DISPOSABLE=1` is an acknowledgement, not proof of isolation. The build does not attach disks or configure the host.
+Use a disposable Linux VM designated for builds, with Nix supporting flakes, Git, GNU `find`, `realpath`, `sha256sum`, `sha512sum`, Python 3, the pinned `jsonschema==4.26.0` dependency, and enough free storage. Install the Python validator with `python3 -m pip install -r requirements-dev.txt` in the builder environment before starting the experiment. Do not use a persistent WSL distribution as a disposable builder. `AETHER_NIXOS_DISPOSABLE=1` is an acknowledgement, not proof of isolation. The build does not attach disks or configure the host.
 
 ## Commands
 
@@ -20,7 +20,7 @@ experiments/nixos/scripts/build-iso.sh
 
 Record `nix --version`, `nix flake metadata --json`, the locked `nixpkgs` revision, system architecture, Git commit, complete build log, ISO filename, size, and SHA-256/SHA-512 digests. Evaluation and ISO generation are separate outcomes: successful evaluation does not imply that an ISO was built.
 
-Evaluation and build commands pass `--no-write-lock-file`; they use the reviewed lock and will not update it. The build searches recursively for regular `.iso` files under the resolved Nix result symlink, rejects targets outside `/nix/store`, does not follow nested symlinks, and requires exactly one ISO. The experiment record includes the artifact path relative to the result directory. No ISO, multiple ISOs, checksum errors, or metadata errors are recorded as failures with their logs; a successful Nix build does not imply that extraction or evidence generation passed.
+Evaluation and build commands pass `--no-write-lock-file`; they use the reviewed lock and will not update it. The build searches recursively for regular `.iso` files under the resolved Nix result symlink, rejects targets outside `/nix/store`, does not follow nested symlinks, and requires exactly one ISO. The experiment record includes the artifact path relative to the result directory. No ISO, multiple ISOs, checksum errors, or metadata errors are recorded as failures with their logs; a successful Nix build does not imply that extraction or evidence generation passed. Records are serialized with Python's JSON encoder and validated against the complete Draft 2020-12 schema before atomic replacement, so quotes, backslashes, newlines, Unicode, and empty optional fields remain safe. The invocation-owned result symlink is identity-checked and unlinked after copying the artifact on success, or from the exit trap after failure or interruption. Cleanup removes only the symlink, never its target.
 
 ## Troubleshooting and cleanup
 

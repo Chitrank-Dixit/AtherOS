@@ -15,7 +15,8 @@ check() {
 
 section 'Operating system'
 if [[ -r /etc/os-release ]]; then
-  # shellcheck source=/etc/os-release
+  # System-provided release metadata; ShellCheck cannot resolve this host path.
+  # shellcheck disable=SC1091
   . /etc/os-release
   printf 'Distribution: %s\nVersion: %s\n' "${PRETTY_NAME:-unknown}" "${VERSION_ID:-unknown}"
 else

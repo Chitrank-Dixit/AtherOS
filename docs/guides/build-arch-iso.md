@@ -6,7 +6,7 @@ This builds the Archiso experiment profile in an explicitly disposable Linux bui
 
 ## Prerequisites
 
-- A disposable Arch Linux x86_64 Linux VM with `archiso`, `pacman`, `git`, `sha256sum`, `sha512sum`, and Python 3.
+- A disposable Arch Linux x86_64 Linux VM with `archiso`, `pacman`, `git`, `sha256sum`, `sha512sum`, Python 3, and the pinned `jsonschema==4.26.0` development dependency. Install Python dependencies with `python3 -m pip install -r requirements-dev.txt`.
 - A pinned Arch Linux Archive snapshot date in `YYYY/MM/DD` format.
 - For the Podman builder, an official dated `archlinux/archlinux` base image reference pinned by a reviewed SHA-256 OCI digest. The base tag date must equal the Archive date.
 - Sufficient free storage for packages, work tree, ISO, logs, and metadata.
@@ -28,6 +28,8 @@ Replace the example snapshot with a deliberately chosen Archive date. The script
 The container builder uses `pacman -Sy --needed`, never `pacman -Syyu` as a downgrade mechanism. Its official bootstrap image is a separate input from the Archive repositories. Matching the date in the tag and repository does not prove every base package originated in that Archive, so the build remains experimental and does not claim binary reproducibility. Metadata records both references, Archiso version, image digest, package manifest, and evidence status. Build execution can pass while evidence validation fails if the package database is absent or malformed.
 
 The minimal profile is a diagnostic live system. The desktop profile is a package composition experiment; included desktop packages do not prove that a graphical session works. Session switching and recovery require separate VM tests.
+
+Build, artifact, checksum, package-manifest, and Archiso-version statuses are recorded independently. Missing package database or incomplete manifest extraction produces a failed overall experiment even when mkarchiso generated an ISO.
 
 ## Reproducibility and cleanup
 

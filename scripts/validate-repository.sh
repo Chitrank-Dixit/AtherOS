@@ -16,6 +16,8 @@ required=(README.md ROADMAP.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md LI
   experiments/containers/nixos/Containerfile docs/guides/podman-build-environments.md \
   docs/adr/ADR-007-container-runtime.md scripts/experiments/find-nixos-iso.sh \
   scripts/experiments/arch_snapshot.py scripts/experiments/arch_evidence.py requirements-dev.txt \
+  scripts/experiments/arch_build_result.py scripts/experiments/nixos_record.py \
+  scripts/experiments/nixos_result_link.py \
   tests/unit/test_repository_tools.py tests/unit/test_experiment_records.py)
 failed=0
 for path in "${required[@]}"; do
