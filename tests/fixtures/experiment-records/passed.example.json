@@ -1,0 +1,13 @@
+{
+  "fixture_only": true,
+  "id": "EXAMPLE-PASSED",
+  "status": "PASSED",
+  "environment": "Synthetic schema fixture; no system experiment represented",
+  "os_revision": "example-only",
+  "package_revisions": [],
+  "commands": ["example command (not executed)"],
+  "expected": "Example illustrates the PASSED record shape",
+  "actual": "Synthetic example only; this is not test evidence",
+  "evidence": ["Synthetic fixture marker; not evidence of execution"],
+  "limitations": ["Replace with a real command log and observed result before recording an experiment"]
+}

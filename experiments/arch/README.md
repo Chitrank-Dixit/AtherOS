@@ -10,7 +10,7 @@ Disposable x86_64 UEFI Arch VM, systemd, network, and functional package manager
 
 1. In an approved disposable Arch VM/builder, install the `archiso` package using the VM's package manager. Archiso can run as a regular user; package cache use may fall back to `/tmp`.
 2. From a Linux checkout, run `make validate-arch`.
-3. Run `AETHER_ARCHISO_DISPOSABLE=1 make build-arch-iso`; output is written under `out/arch/minimal` by default. To override, set `AETHER_ARCHISO_OUT` to a path in the disposable builder. The wrapper requires Linux, `/etc/arch-release`, a detected VM, and `mkarchiso`; it does not elevate privileges.
+3. In the disposable VM, set `AETHER_ARCHISO_DISPOSABLE=1` and choose an explicit Arch Linux Archive snapshot with `AETHER_ARCHISO_REPO_SNAPSHOT=YYYY/MM/DD`. Run `experiments/arch/scripts/build-iso.sh minimal` or `experiments/arch/scripts/build-iso.sh desktop-gnome`. Outputs are kept under profile-specific, timestamped directories within `out/arch/`. The wrapper requires Linux, `/etc/arch-release`, a detected VM, and `mkarchiso`; it does not elevate privileges.
 4. Boot the generated image in a disposable UEFI VM and record the firmware, image checksum, boot, networking, and install outcome.
 5. Test GNOME, KDE Plasma, and Hyprland independently, including GDM/SDDM, desktop switching, and reboot.
 
@@ -20,4 +20,4 @@ This is a minimal bootable Archiso scaffold, not an installer or Aether desktop 
 
 `experiments/arch/iso/profile/` remains the minimal profile: `base`, `linux`, `linux-firmware`, and `networkmanager`. The separate `experiments/arch/iso/desktop-gnome/` profile adds the `gnome` package group, GDM, NetworkManager, PipeWire components, and GNOME portal integration. It is a package composition experiment only; installing these packages does not demonstrate successful login or session behavior.
 
-To build the separate profile inside the disposable VM, run `AETHER_ARCHISO_DISPOSABLE=1 AETHER_ARCHISO_PROFILE=desktop-gnome make build-arch-iso`. Each profile writes its ISO and `SHA256SUMS`/`SHA512SUMS` files to its own ignored output directory. Record image path, checksum, package snapshot, and boot evidence in the experiment results.
+To build the separate profile inside the disposable VM, use `experiments/arch/scripts/build-iso.sh desktop-gnome` after setting both required environment variables. Each profile writes its ISO, complete build log, tool/build inputs, and `SHA256SUMS`/`SHA512SUMS` files to its own ignored output tree. Record package versions and boot evidence in the experiment results. Snapshot pinning is an input record, not a claim of bit-for-bit reproducibility.

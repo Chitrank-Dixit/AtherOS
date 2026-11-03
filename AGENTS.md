@@ -28,7 +28,7 @@ The project prioritizes user choice, modularity, reproducibility, security and m
 - System Studio will be a graphical management application.
 - Tauri, React, TypeScript and Rust are the proposed System Studio stack.
 - Python is the proposed AI runtime language.
-- Podman is the preferred developer container runtime.
+- Podman is the primary local container runtime (accepted by ADR-007).
 
 Do not treat proposed technology selections as final unless an ADR has accepted them.
 

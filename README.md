@@ -21,6 +21,8 @@ This repository is in **Sprint 0: Foundation and technical feasibility**. It eva
 - [Build environment](docs/development/build-environment.md)
 - [Testing and validation](docs/development/testing.md)
 - [Licensing and third-party notices](docs/development/licensing.md)
+- [Build-environment audit and Sprint 0.1 results](docs/research/sprint-0.1-implementation-audit.md)
+- [Podman build environments](docs/guides/podman-build-environments.md)
 - [Sprint 0 report generation](docs/development/report-generation.md)
 - [Roadmap](ROADMAP.md)
 - [Contributing](CONTRIBUTING.md)

@@ -1,0 +1,13 @@
+{
+  "fixture_only": true,
+  "id": "EXAMPLE-FAILED",
+  "status": "FAILED",
+  "environment": "Synthetic schema fixture; no system experiment represented",
+  "os_revision": "example-only",
+  "package_revisions": [],
+  "commands": ["example command (not executed)"],
+  "expected": "Example illustrates the FAILED record shape",
+  "actual": "Synthetic example only; this is not a test failure report",
+  "evidence": ["Synthetic fixture marker; not evidence of execution"],
+  "limitations": ["Replace with an actual failure log before recording an experiment"]
+}
