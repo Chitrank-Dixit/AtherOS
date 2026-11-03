@@ -1,8 +1,15 @@
 # Build environment
 
-## Current host evidence
+## Recorded host evidence (2026-11-03 diagnostics)
 
-The workspace is on Windows. The Podman 6.0.2 CLI is installed, but `podman info` cannot reach its WSL-backed engine because access to the machine identity is denied. `podman machine list` fails because Podman cannot create `C:\Users\Admin\.config` (a file already exists at that path). The configured default connection is the root connection. The non-root connection is not selected. Rootless operation and container execution are therefore unverified. The audit makes no changes to the machine, connection, or the conflicting path.
+Historical Windows diagnostics recorded different Podman CLI versions in separate sessions on 2026-11-03:
+
+| Observation | CLI version | Context and result |
+| --- | --- | --- |
+| Sprint 0.1 build-environment assessment | 6.0.2 | `podman info` could not reach the WSL-backed engine because access to the machine identity was denied. |
+| Later Sprint 0.1 implementation audit | 6.1.4 | The client displayed its version, then engine access failed on the same machine-identity permission error. The connection listing showed the root connection as default. |
+
+These are separate session/environment observations; this report does not select one as the authoritative current version or infer that the engine works. A later `podman machine list` attempt failed because Podman could not create `C:\Users\Admin\.config` (a file already exists at that path). Rootless operation and container execution remain unverified. No machine, connection, or conflicting path was changed.
 
 WSL enumeration still returns `E_ACCESSDENIED`. `qemu-system-x86_64` and `VBoxManage` were not found in PATH, and Hyper-V VM inventory returned access denied. Host CIM queries also returned access denied. DNS resolves the configured registries, but direct HTTPS port 443 checks failed. These checks establish that no usable builder or VM environment is demonstrated; they do not prove the host cannot support one. See the [current Sprint 0.1 audit](../research/sprint-0.1-implementation-audit.md).
 
