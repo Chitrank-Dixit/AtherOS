@@ -205,6 +205,11 @@ class PodmanSecurityTests(unittest.TestCase):
             "Storage filesystem: unavailable (remote graph root cannot be inspected locally)",
             result.stdout,
         )
+        self.assertIn(
+            "Root mount propagation: unavailable (remote Podman host; "
+            "client mount propagation is not representative)",
+            result.stdout,
+        )
         self.assertIn("remote Podman is not accepted", result.stderr)
 
     def test_runtime_check_rejects_remote_environment_override(self) -> None:

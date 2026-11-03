@@ -84,7 +84,11 @@ else
 fi
 printf 'Storage filesystem: %s\n' "$storage_fs"
 
-if command -v findmnt >/dev/null 2>&1; then
+if [[ $remote == true ]]; then
+  root_propagation='unavailable (remote Podman host; client mount propagation is not representative)'
+elif [[ $remote != false ]]; then
+  root_propagation='unavailable (Podman target locality is unknown)'
+elif command -v findmnt >/dev/null 2>&1; then
   root_propagation=$(findmnt --noheadings --output PROPAGATION / 2>/dev/null | head -n 1)
 else
   root_propagation=''
