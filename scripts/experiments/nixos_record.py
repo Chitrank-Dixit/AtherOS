@@ -38,9 +38,11 @@ def create_record(values: dict[str, Any]) -> dict[str, Any]:
         "artifact_status": values["artifact_status"],
         "checksum_status": values["checksum_status"],
         "evidence_complete": values["complete"],
-        "build_stage": values["stage"],
-        "error": values["error"],
     }
+    if values["stage"]:
+        record["build_stage"] = values["stage"]
+    if values["error"]:
+        record["error"] = values["error"]
     if values["checksum_status"] == "PASSED":
         record["logs"].extend(["SHA256SUMS", "SHA512SUMS"])
     if values["relative_iso"]:

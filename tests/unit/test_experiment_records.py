@@ -9,6 +9,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from jsonschema import Draft202012Validator
+
 
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATOR_PATH = ROOT / "scripts/experiments/validate-records.py"
@@ -134,7 +136,7 @@ class ExperimentRecordTests(unittest.TestCase):
             self.assertEqual([], list(Draft202012Validator(SCHEMA).iter_errors(record)))
             self.assertEqual(values["actual"], record["actual"])
             self.assertEqual(values["stage"], record["build_stage"])
-            self.assertEqual("", record["error"])
+            self.assertNotIn("error", record)
             self.assertNotIn("artifact_relative_path", record)
             self.assertNotIn("iso_sha256", record)
 
@@ -215,7 +217,7 @@ class ExperimentRecordTests(unittest.TestCase):
             output = Path(directory) / "record.json"
             output.write_text("previous", encoding="utf-8")
             values = {
-                "id": "bad", "status": "PASSED", "build_status": "PASSED",
+                "id": "", "status": "PASSED", "build_status": "PASSED",
                 "artifact_status": "PASSED", "checksum_status": "PASSED",
                 "complete": True, "stage": "", "revision": "rev", "actual": "ok",
                 "error": "none", "relative_iso": "", "checksum": "",

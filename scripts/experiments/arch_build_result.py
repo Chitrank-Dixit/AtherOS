@@ -9,8 +9,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
+from jsonschema import Draft202012Validator
 
 
 STAGE_STATUSES = ("PASSED", "FAILED", "BLOCKED", "NOT TESTED")
