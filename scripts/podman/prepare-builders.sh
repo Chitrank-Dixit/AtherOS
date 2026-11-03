@@ -5,7 +5,8 @@ repo_root=$(cd "$(dirname "$0")/../.." && pwd)
 kind=${1:-}
 archive_date=${2:-${AETHER_ARCHISO_REPO_SNAPSHOT:-}}
 arch_base_image=${3:-${AETHER_ARCH_BASE_IMAGE_REF:-}}
-nix_image='ghcr.io/nixos/nix:2.35.4@sha256:05fe61395588e8a11452e9ba4602d4f0eb0ce5db8f7b9fa417c4ec07af79ca42'
+nix_base_image='ghcr.io/nixos/nix:2.35.4@sha256:05fe61395588e8a11452e9ba4602d4f0eb0ce5db8f7b9fa417c4ec07af79ca42'
+nix_builder_image='localhost/aether-nixos-builder:2.35.4'
 
 if [[ $kind != arch && $kind != nixos ]]; then
   echo "Usage: $0 arch YYYY/MM/DD archlinux/archlinux:<dated-tag>@sha256:<digest> | nixos" >&2
@@ -49,15 +50,35 @@ if [[ $kind == arch ]]; then
   fi
   podman image inspect --format 'Image digest: {{.Digest}} | image ID: {{.Id}}' "$image"
 else
-  if podman image exists "$nix_image"; then
-    echo "Pinned Nix image already present: $nix_image"
+  if podman image exists "$nix_base_image"; then
+    echo "Pinned Nix base image already present: $nix_base_image"
   else
-    podman pull "$nix_image"
+    podman pull "$nix_base_image"
   fi
-  digest=$(podman image inspect --format '{{.Digest}}' "$nix_image")
+  digest=$(podman image inspect --format '{{.Digest}}' "$nix_base_image")
   if [[ $digest != sha256:05fe61395588e8a11452e9ba4602d4f0eb0ce5db8f7b9fa417c4ec07af79ca42 ]]; then
     echo "BLOCKED: pulled image digest did not match the pinned reference ($digest)." >&2
     exit 1
   fi
-  podman image inspect --format 'Image digest: {{.Digest}} | image ID: {{.Id}}' "$nix_image"
+  if podman image exists "$nix_builder_image"; then
+    existing_base=$(podman image inspect --format '{{ index .Labels "org.aether.base-image" }}' "$nix_builder_image")
+    existing_schema=$(podman image inspect --format '{{ index .Labels "org.aether.jsonschema-version" }}' "$nix_builder_image")
+    if [[ $existing_base != "$nix_base_image" || $existing_schema != '4.26.0' ]]; then
+      echo "BLOCKED: existing Nix builder has unexpected provenance labels; preserving it: $nix_builder_image" >&2
+      exit 1
+    fi
+    echo "Nix builder already exists; preserving it without modification: $nix_builder_image"
+  else
+    podman build --pull=never --tag "$nix_builder_image" \
+      --build-arg "NIX_BASE_IMAGE=$nix_base_image" \
+      --file "$repo_root/experiments/containers/nixos/Containerfile" \
+      "$repo_root/experiments/containers/nixos"
+  fi
+  built_base=$(podman image inspect --format '{{ index .Labels "org.aether.base-image" }}' "$nix_builder_image")
+  built_schema=$(podman image inspect --format '{{ index .Labels "org.aether.jsonschema-version" }}' "$nix_builder_image")
+  if [[ $built_base != "$nix_base_image" || $built_schema != '4.26.0' ]]; then
+    echo 'BLOCKED: prepared Nix builder provenance or JSON Schema dependency is incorrect.' >&2
+    exit 1
+  fi
+  podman image inspect --format 'Image digest: {{.Digest}} | image ID: {{.Id}}' "$nix_builder_image"
 fi

@@ -2,6 +2,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -26,6 +27,7 @@ REPORT_SPEC.loader.exec_module(report_generator)
 NIXOS_ARTIFACT_HELPER = ROOT / "scripts/experiments/find-nixos-iso.sh"
 NIXOS_RECORD_PATH = ROOT / "scripts/experiments/nixos_record.py"
 NIXOS_RESULT_LINK_PATH = ROOT / "scripts/experiments/nixos_result_link.py"
+FRESH_OUTPUT_DIR_PATH = ROOT / "scripts/experiments/create-fresh-output-dir.sh"
 ARCH_EVIDENCE_PATH = ROOT / "scripts/experiments/arch_evidence.py"
 ARCH_BUILD_RESULT_PATH = ROOT / "scripts/experiments/arch_build_result.py"
 ARCH_EVIDENCE_SPEC = importlib.util.spec_from_file_location("arch_evidence", ARCH_EVIDENCE_PATH)
@@ -41,6 +43,61 @@ SCHEMA = json.loads((ROOT / "schemas/experiment-record.schema.json").read_text(e
 
 
 class ExperimentRecordTests(unittest.TestCase):
+    @unittest.skipUnless(
+        sys.platform.startswith("linux") and shutil.which("bash"),
+        "requires Bash and POSIX symlinks",
+    )
+    def test_output_directory_helper_rejects_existing_and_symlinked_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            valid = base / "new-output"
+            created = subprocess.run(
+                ["bash", str(FRESH_OUTPUT_DIR_PATH), str(valid)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(0, created.returncode, created.stderr)
+            self.assertEqual(str(valid), created.stdout.strip())
+            self.assertTrue(valid.is_dir())
+
+            existing = subprocess.run(
+                ["bash", str(FRESH_OUTPUT_DIR_PATH), str(valid)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(0, existing.returncode)
+            self.assertIn("existing output path", existing.stderr)
+
+            dangling_target = base / "outside" / "new-output"
+            dangling_link = base / "dangling-output"
+            dangling_link.symlink_to(dangling_target, target_is_directory=True)
+            dangling = subprocess.run(
+                ["bash", str(FRESH_OUTPUT_DIR_PATH), str(dangling_link)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(0, dangling.returncode)
+            self.assertIn("symlink component", dangling.stderr)
+            self.assertFalse(dangling_target.exists())
+            self.assertTrue(dangling_link.is_symlink())
+
+            linked_parent = base / "linked-parent"
+            external = base / "external"
+            external.mkdir()
+            linked_parent.symlink_to(external, target_is_directory=True)
+            nested = subprocess.run(
+                ["bash", str(FRESH_OUTPUT_DIR_PATH), str(linked_parent / "new-output")],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(0, nested.returncode)
+            self.assertIn("symlink component", nested.stderr)
+            self.assertFalse((external / "new-output").exists())
+
     def run_arch_outcome(
         self,
         directory: Path,

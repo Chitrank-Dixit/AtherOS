@@ -18,6 +18,8 @@ required=(README.md ROADMAP.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md LI
   scripts/experiments/arch_snapshot.py scripts/experiments/arch_evidence.py requirements-dev.txt \
   scripts/experiments/arch_build_result.py scripts/experiments/nixos_record.py \
   scripts/experiments/nixos_result_link.py \
+  scripts/experiments/create-fresh-output-dir.sh \
+  experiments/containers/nixos/python-env.nix \
   tests/unit/test_repository_tools.py tests/unit/test_experiment_records.py)
 failed=0
 for path in "${required[@]}"; do

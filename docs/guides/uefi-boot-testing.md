@@ -10,7 +10,7 @@ Booting a live ISO needs no writable virtual disk. Never attach physical disks, 
 
 ## Boot evidence
 
-The repository harness performs a live ISO boot with no writable disk. Run it only from an explicitly disposable Linux VM, using an existing OVMF code image and a new evidence directory:
+The repository harness performs a live ISO boot with no writable disk. Run it only from an explicitly disposable Linux VM, using an existing OVMF code image and a new evidence directory. The harness refuses existing output paths and any symlinked path component; choose a direct, unused path:
 
 ```bash
 export AETHER_QEMU_DISPOSABLE=1

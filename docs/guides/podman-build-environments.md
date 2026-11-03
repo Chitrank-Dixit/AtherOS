@@ -24,14 +24,14 @@ It reports the Podman version, rootless/local service status, subordinate IDs, a
 
 ## Prepare the images (separate from builds)
 
-Choose an Arch Archive date and an official dated base image reference pinned by an OCI digest. The date encoded in the base image tag must match the selected Archive date. Obtain and review a real digest from the registry; the repository does not supply or invent one. The base image is an independent bootstrap input. The selected Archive provides package repositories for archiso installation and the ISO package set, but package state already present in the bootstrap image may not originate from that Archive. The builder uses `pacman -Sy --needed` and never relies on `pacman -Syyu` to downgrade packages. This remains an experimental mixed-input build, and binary reproducibility is not claimed. The Nix builder starts from the NixOS project's Nix 2.35.4 `linux/amd64` image pinned to `sha256:05fe61395588e8a11452e9ba4602d4f0eb0ce5db8f7b9fa417c4ec07af79ca42`.
+Choose an Arch Archive date and an official dated base image reference pinned by an OCI digest. The date encoded in the base image tag must match the selected Archive date. Obtain and review a real digest from the registry; the repository does not supply or invent one. The base image is an independent bootstrap input. The selected Archive provides package repositories for archiso installation and the ISO package set, but package state already present in the bootstrap image may not originate from that Archive. The builder uses `pacman -Sy --needed` and never relies on `pacman -Syyu` to downgrade packages. This remains an experimental mixed-input build, and binary reproducibility is not claimed. The Nix builder extends the NixOS project's Nix 2.35.4 `linux/amd64` base image pinned to `sha256:05fe61395588e8a11452e9ba4602d4f0eb0ce5db8f7b9fa417c4ec07af79ca42` with `jsonschema==4.26.0`. Its Python environment is resolved from the nixpkgs channel bundled in that digest-pinned base image and is version-checked during image preparation.
 
 ```bash
 make podman-prepare-arch ARCHIVE_DATE=YYYY/MM/DD ARCH_BASE_IMAGE='archlinux/archlinux:<matching-dated-tag>@sha256:<reviewed-digest>'
 make podman-prepare-nixos
 ```
 
-Image preparation pulls/builds local images only. Existing same-name images are preserved. Preparation does not run an ISO build. It requires a local rootless Podman runtime and network access to the image/package sources.
+Image preparation builds/pulls local images only. The Nix builder extends the digest-pinned official Nix base image with the JSON Schema validator used by the experiment-record script; it checks the pinned validator version during image preparation. Existing same-name images are preserved. Preparation does not run an ISO build. It requires a local rootless Podman runtime and network access to the image/package sources.
 
 ## Build Arch
 
@@ -45,7 +45,7 @@ make podman-build-arch-iso PROFILE=minimal
 make podman-build-arch-iso PROFILE=desktop-gnome
 ```
 
-The profile is mounted read-only. Build output is in a unique ignored `out/podman/arch/` directory; logs, checksums, build metadata, Podman version, builder image digest, base image tag/digest, archive date, and package manifest are retained there. The experiment record separates build, artifact, checksum, and manifest statuses. Missing or incomplete package databases make evidence validation fail even when mkarchiso itself succeeded. A desktop package profile is not desktop-session evidence.
+The profile is mounted read-only. Build output is in a unique ignored `out/podman/arch/` directory; output creation refuses existing paths and symlinked path components before mounting the directory read/write. Logs, checksums, build metadata, Podman version, builder image digest, base image tag/digest, archive date, and package manifest are retained there. The experiment record separates build, artifact, checksum, and manifest statuses. Missing or incomplete package databases make evidence validation fail even when mkarchiso itself succeeded. A desktop package profile is not desktop-session evidence.
 
 ## Build NixOS
 

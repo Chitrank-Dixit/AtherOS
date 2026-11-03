@@ -12,7 +12,7 @@ done
 if [[ ! -f $1 || ! -f $2 ]]; then echo 'ERROR: ISO and OVMF firmware files must both exist.' >&2; exit 2; fi
 iso=$(realpath "$1")
 firmware=$(realpath "$2")
-out_root=$(realpath -m "$3")
+requested_out_root=$3
 memory=${4:-4096}
 cpus=${5:-2}
 
@@ -30,8 +30,7 @@ fi
 if [[ ! $memory =~ ^[0-9]+$ || $memory -lt 1024 || ! $cpus =~ ^[0-9]+$ || $cpus -lt 1 ]]; then
   echo 'ERROR: memory must be >=1024 MiB and CPU count must be a positive integer.' >&2; exit 2
 fi
-if [[ -e $out_root ]]; then echo "ERROR: output root already exists; choose a new path: $out_root" >&2; exit 1; fi
-mkdir -p "$out_root"
+out_root=$(bash "$(dirname -- "$0")/create-fresh-output-dir.sh" "$requested_out_root")
 started=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 iso_sha256=$(sha256sum "$iso" | cut -d ' ' -f 1)
 firmware_sha256=$(sha256sum "$firmware" | cut -d ' ' -f 1)

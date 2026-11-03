@@ -5,7 +5,7 @@ repo_root=$(cd "$(dirname "$0")/../.." && pwd)
 kind=${1:-}
 profile=${2:-minimal}
 archive_date=${AETHER_ARCHISO_REPO_SNAPSHOT:-}
-nix_image='ghcr.io/nixos/nix:2.35.4@sha256:05fe61395588e8a11452e9ba4602d4f0eb0ce5db8f7b9fa417c4ec07af79ca42'
+nix_image='localhost/aether-nixos-builder:2.35.4'
 
 if [[ $kind != arch && $kind != nixos ]]; then
   echo "Usage: AETHER_PODMAN_DISPOSABLE=1 $0 arch [minimal|desktop-gnome] | nixos" >&2
@@ -36,6 +36,13 @@ if ! podman image exists "$image"; then
   echo "Run scripts/podman/prepare-builders.sh $kind first; this build command does not pull or build images." >&2
   exit 1
 fi
+if [[ $kind == nixos ]]; then
+  image_base=$(podman image inspect --format '{{ index .Labels "org.aether.base-image" }}' "$image")
+  image_schema=$(podman image inspect --format '{{ index .Labels "org.aether.jsonschema-version" }}' "$image")
+  if [[ $image_base != 'ghcr.io/nixos/nix:2.35.4@sha256:05fe61395588e8a11452e9ba4602d4f0eb0ce5db8f7b9fa417c4ec07af79ca42' || $image_schema != '4.26.0' ]]; then
+    echo 'BLOCKED: Nix builder image provenance or JSON Schema dependency does not match the reviewed inputs.' >&2; exit 1
+  fi
+fi
 if [[ $kind == arch ]]; then
   image_date=$(podman image inspect --format '{{ index .Labels "org.aether.archive-date" }}' "$image")
   image_base=$(podman image inspect --format '{{ index .Labels "org.aether.base-image" }}' "$image")
@@ -64,8 +71,7 @@ fi
 
 build_id=$(date -u +'%Y%m%dT%H%M%SZ')
 out_dir="$repo_root/out/podman/$kind/$build_id"
-if [[ -e $out_dir ]]; then echo "ERROR: refusing to reuse output path $out_dir" >&2; exit 1; fi
-mkdir -p "$out_dir"
+out_dir=$(bash "$repo_root/scripts/experiments/create-fresh-output-dir.sh" "$out_dir")
 cat > "$out_dir/podman-metadata.txt" <<EOF
 builder=$kind
 podman_version=$podman_version
@@ -74,6 +80,7 @@ podman_remote=$remote
 container_image=$image
 container_image_digest=$image_digest
 container_image_id=$image_id
+jsonschema_version=${image_schema:-not-applicable}
 archive_snapshot=${archive_date:-not-applicable}
 base_image_ref=${image_base:-not-applicable}
 base_image_digest=$base_image_digest
