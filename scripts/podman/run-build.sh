@@ -2,6 +2,8 @@
 # Run one build in a rootless Podman container; source is RO and artifacts RW.
 set -euo pipefail
 repo_root=$(cd "$(dirname "$0")/../.." && pwd)
+# shellcheck source=scripts/podman/security-profile.sh
+source "$repo_root/scripts/podman/security-profile.sh"
 kind=${1:-}
 profile=${2:-minimal}
 archive_date=${AETHER_ARCHISO_REPO_SNAPSHOT:-}
@@ -87,11 +89,20 @@ base_image_digest=$base_image_digest
 source_mount=read-only
 artifact_mount=read-write
 container_privileged=false
-extra_capabilities=none
+security_profile=nested-namespace
+capability_policy=Podman_default_set_no_additions
+cap_sys_admin=must_be_absent_at_runtime
+seccomp=Podman_default
+no_new_privileges=true
+network_policy=rootless_bridge
 host_podman_socket=not-mounted
 EOF
 
-run_args=(run --rm --pull=never --security-opt=no-new-privileges --cap-drop=ALL
+run_args=(run --rm --pull=never)
+# Both current builders execute a nested namespace probe. Keep this exception
+# explicit; ordinary containers should use the stricter standard profile.
+aether_podman_security_args nested-namespace run_args
+run_args+=(
   --volume "$repo_root:/workspace:ro" --volume "$out_dir:/out:rw"
   --workdir /workspace --entrypoint bash --env AETHER_PODMAN_BUILD=1
   --env AETHER_BUILDER_IMAGE_DIGEST="$image_digest" --env AETHER_PODMAN_VERSION="$podman_version"
@@ -104,10 +115,10 @@ if [[ $kind == arch ]]; then
   # shellcheck disable=SC2016
   command=(-c 'bash /workspace/scripts/podman/probe-builder-namespaces.sh && bash /workspace/experiments/arch/scripts/build-iso.sh "$1"' _ "$profile")
 else
-  # Evaluation is not a build. The existing build script runs only after this sandbox gate succeeds.
+  # Probe namespace support before evaluation and build; evaluation is not a build.
   # SC2016 is intentional: this whole string is the script for the container's bash process.
   # shellcheck disable=SC2016
-  command=(-c 'nix --option sandbox true --option sandbox-fallback false --extra-experimental-features "nix-command flakes" eval --no-write-lock-file --raw ./experiments/nixos#nixosConfigurations.aether-iso.config.system.build.isoImage.drvPath && bash /workspace/scripts/podman/probe-builder-namespaces.sh && bash /workspace/experiments/nixos/scripts/build-iso.sh')
+  command=(-c 'bash /workspace/scripts/podman/probe-builder-namespaces.sh && nix --option sandbox true --option sandbox-fallback false --extra-experimental-features "nix-command flakes" eval --no-write-lock-file --raw ./experiments/nixos#nixosConfigurations.aether-iso.config.system.build.isoImage.drvPath && bash /workspace/experiments/nixos/scripts/build-iso.sh')
 fi
 set +e
 podman "${run_args[@]}" "$image" "${command[@]}" 2>&1 | tee "$out_dir/podman-run.log"

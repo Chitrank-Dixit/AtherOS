@@ -12,7 +12,20 @@ Podman is Aether's accepted primary local container runtime ([ADR-007](../adr/AD
 - Nix Linux sandboxing creates private mount, PID, network, IPC, and UTS namespaces and requires privileged sandbox setup from Nix's perspective. The Nix image keeps sandboxing enabled and sets `sandbox-fallback = false`. If sandboxing cannot run with rootless Podman, the build fails and must be run in an explicitly disposable Linux VM. Do not add capabilities, disable seccomp/SELinux, use `--privileged`, or pass a host Nix/Podman socket.
 - Source is a read-only bind mount. A separate output directory is writable. SELinux relabeling is not requested. A denied mount is a blocker; do not turn off host enforcement.
 
-Primary technical references: [mkarchiso manual](https://man.archlinux.org/man/mkarchiso.1.en), [Archiso project requirements](https://github.com/archlinux/archiso), [Podman rootless mode](https://docs.podman.io/en/latest/markdown/podman.1.html#rootless-mode), [Podman build mount and isolation options](https://docs.podman.io/en/stable/markdown/podman-build.1.html), and [Nix sandbox configuration](https://nix.dev/manual/nix/2.35/command-ref/conf-file.html#conf-sandbox).
+### Security profiles
+
+`scripts/podman/security-profile.sh` defines two profiles:
+
+| Profile | Capability policy | Other controls | Intended use |
+| --- | --- | --- | --- |
+| `standard` | `--cap-drop=ALL` | `no-new-privileges`; network disabled | Ordinary containers that do not need nested namespaces or network access. |
+| `nested-namespace` | Preserve the capability set supplied by Podman's rootless runtime; add none | `no-new-privileges`; default seccomp and host LSM policy; explicit rootless bridge network | Archiso and Nix builders, which execute nested namespace operations and need package access. |
+
+The builder wrapper selects `nested-namespace` because the operator-reported Ubuntu 26.04 WSL2 matrix found nested user/mount namespaces worked with Podman's default capability set and failed with `--cap-drop=ALL`. The tested SETUID+SETGID and SETUID+SETGID+SETPCAP additions also failed, so Aether adds no capabilities. This profile retains more runtime-default capabilities than the standard profile; review the selected Podman version's defaults when updating the runtime. It explicitly uses `--network=bridge`, rather than sharing the host network, and the in-container probe blocks execution if `CAP_SYS_ADMIN` appears in any capability set. No `--privileged`, seccomp override, LSM disablement, host socket, or host namespace is used. The in-container namespace probe must pass before the build script starts. This is an evidence-based exception for namespace-dependent builders, not a change to the standard profile.
+
+The default Podman capability set is version-defined. Podman's run documentation warns that adding capabilities increases process privileges and identifies `CAP_SYS_ADMIN` as particularly dangerous; builders therefore preserve only runtime defaults and add none ([Podman run documentation](https://docs.podman.io/en/v6.1.3/markdown/podman-run.1.html)).
+
+Primary technical references: [mkarchiso manual](https://man.archlinux.org/man/mkarchiso.1.en), [Archiso project requirements](https://github.com/archlinux/archiso), [Podman rootless mode](https://docs.podman.io/en/latest/markdown/podman.1.html#rootless-mode), [Podman info fields](https://docs.podman.io/en/latest/markdown/podman-info.1.html), [Podman build mount and isolation options](https://docs.podman.io/en/stable/markdown/podman-build.1.html), and [Nix sandbox configuration](https://nix.dev/manual/nix/2.35/command-ref/conf-file.html#conf-sandbox).
 
 ## Read-only runtime check
 
@@ -20,7 +33,7 @@ Primary technical references: [mkarchiso manual](https://man.archlinux.org/man/m
 make podman-env-check
 ```
 
-It reports the Podman version, rootless/local service status, subordinate IDs, and basic user namespace functionality. It does not create containers, images, volumes, networks, machines, or connections. A pass is not proof that nested Archiso or Nix sandboxing will work; those are checked inside their builder containers.
+It reports local versus remote service, rootless versus rootful mode, OCI runtime, network backend, storage driver/filesystem, root mount propagation, subordinate UID/GID ranges, host user namespace support, and Podman's rootless namespace prerequisite. It does not create containers, images, volumes, networks, machines, or connections. The output labels nested-container operation **NOT TESTED**: that is a separate probe executed inside each builder immediately before the build. A host prerequisite pass does not establish that nested Archiso or Nix sandboxing will work.
 
 ## Prepare the images (separate from builds)
 

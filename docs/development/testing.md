@@ -12,9 +12,11 @@ make validate-records
 
 The record validator, report generator, unit tests, and CI fixture job all use the same Draft 2020-12 schema through `jsonschema`.
 
+Podman security-profile and runtime-gate unit tests are included in `make test`. Their evidence boundaries are documented in the [Sprint 0.3 Podman security profile report](sprint-0.3-podman-security.md).
+
 ## Repository checks
 
-`make validate` checks required structure and available Bash/Python/JSON syntax, then validates experiment fixtures. `make test` runs Python `unittest` cases for repository tooling, record validation, snapshot inputs, and artifact discovery. CI runs these checks plus Ruff, Pyright, ShellCheck, markdownlint, and yamllint without secrets.
+`make validate` checks required structure and available Bash/Python/JSON syntax, then validates experiment fixtures and machine-readable experiment results. `make test` runs Python `unittest` cases for repository tooling, record validation, snapshot inputs, artifact discovery, and Podman security-profile/runtime gates. CI runs these checks plus Ruff, Pyright, ShellCheck, markdownlint, and yamllint without secrets.
 
 ## Experiment evidence
 

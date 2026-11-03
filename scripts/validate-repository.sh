@@ -12,7 +12,8 @@ required=(README.md ROADMAP.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md LI
   scripts/environment/inspect-windows-host.ps1 scripts/environment/inspect-linux-builder.sh \
   scripts/experiments/boot-iso-uefi.sh scripts/podman/check-runtime.sh \
   scripts/podman/probe-builder-namespaces.sh scripts/podman/prepare-builders.sh \
-  scripts/podman/run-build.sh experiments/containers/archiso/Containerfile \
+  scripts/podman/run-build.sh scripts/podman/security-profile.sh \
+  experiments/containers/archiso/Containerfile \
   experiments/containers/nixos/Containerfile docs/guides/podman-build-environments.md \
   docs/adr/ADR-007-container-runtime.md scripts/experiments/find-nixos-iso.sh \
   scripts/experiments/arch_snapshot.py scripts/experiments/arch_evidence.py requirements-dev.txt \
@@ -20,7 +21,10 @@ required=(README.md ROADMAP.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md LI
   scripts/experiments/nixos_result_link.py \
   scripts/experiments/create-fresh-output-dir.sh \
   experiments/containers/nixos/python-env.nix \
-  tests/unit/test_repository_tools.py tests/unit/test_experiment_records.py)
+  docs/development/sprint-0.3-podman-security.md \
+  tests/unit/test_repository_tools.py tests/unit/test_experiment_records.py \
+  tests/unit/test_podman_security.py \
+  experiments/containers/results/sprint-0.3-wsl2-namespace-security.json)
 failed=0
 for path in "${required[@]}"; do
   if [[ -f "$path" ]]; then printf 'OK %s\n' "$path"; else printf 'MISSING %s\n' "$path" >&2; failed=1; fi

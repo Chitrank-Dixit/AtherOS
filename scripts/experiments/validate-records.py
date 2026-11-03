@@ -37,6 +37,13 @@ def validate(path: Path, schema: dict[str, Any]) -> list[str]:
     return [_format_error(path, issue) for issue in issues]
 
 
+def record_paths() -> list[Path]:
+    """Return fixture records and checked-in experiment result records."""
+    fixtures = (ROOT / "tests/fixtures").rglob("*.json")
+    results = (ROOT / "experiments").glob("**/results/*.json")
+    return sorted(set(fixtures) | set(results))
+
+
 def _format_error(path: Path, issue: ValidationError) -> str:
     location = ".".join(str(part) for part in issue.absolute_path) or "<root>"
     return f"{path}: {location}: {issue.message}"
@@ -49,15 +56,15 @@ def main() -> int:
         print(f"Schema error: {exc}", file=sys.stderr)
         return 1
 
-    paths = sorted((ROOT / "tests/fixtures").rglob("*.json"))
+    paths = record_paths()
     if not paths:
-        print("No experiment record fixtures found", file=sys.stderr)
+        print("No experiment records found", file=sys.stderr)
         return 1
     errors = [error for path in paths for error in validate(path, schema)]
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
-    print(f"Validated {len(paths)} experiment record fixture(s) with Draft 2020-12.")
+    print(f"Validated {len(paths)} experiment record(s) with Draft 2020-12.")
     return 0
 
 

@@ -1,0 +1,26 @@
+{
+  "id": "PODMAN-WSL2-NAMESPACE-SECURITY-01",
+  "status": "PASSED",
+  "distribution": "Ubuntu 26.04 under WSL2",
+  "distribution_revision": "Kernel 6.18.33.2",
+  "builder_environment": "Local rootless Podman 5.7.0 on Ubuntu 26.04 WSL2",
+  "environment": "Ubuntu 26.04 WSL2; kernel 6.18.33.2; local rootless Podman 5.7.0",
+  "build_status": "NOT TESTED",
+  "boot_status": "NOT TESTED",
+  "package_revisions": [
+    {"name": "Podman", "revision": "5.7.0"},
+    {"name": "Linux kernel", "revision": "6.18.33.2"}
+  ],
+  "commands": [],
+  "expected": "Determine whether non-privileged rootless Podman supports nested user/mount namespace operations with no-new-privileges and no added capabilities, and compare more restrictive or modified capability sets.",
+  "actual": "Overall PASSED for identifying a compatible reported profile: local rootless Podman, host user namespaces, rootless container execution, read-only source bind mount, writable output bind mount, nested user namespace with the runtime default capability set, and nested mount namespace/tmpfs all passed. Control profiles failed: --cap-drop=ALL; SETUID+SETGID; and SETUID+SETGID+SETPCAP. Successful nested namespace tests retained no-new-privileges. These control failures are findings, not evidence that every profile passed.",
+  "evidence": [
+    "Operator-provided Sprint 0.3 experimental result matrix. Raw command transcripts and logs were not supplied with the results."
+  ],
+  "limitations": [
+    "Experiment date and exact command transcripts were not provided.",
+    "The tested capability additions were combinations; no experiment isolated which individual default capability is required.",
+    "These results establish the supplied WSL2 observations only; they do not establish Archiso or NixOS ISO build success.",
+    "This record does not independently reproduce the reported tests."
+  ]
+}

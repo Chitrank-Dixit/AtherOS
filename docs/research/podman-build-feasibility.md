@@ -25,6 +25,26 @@ SELinux labeling and the host filesystem can prevent the source/artifact bind mo
 
 The Windows Podman 6.1.4 CLI is present, but the engine is unreachable because the existing machine identity cannot be read. The default connection points to its root service. Direct TCP/443 checks to the required registries failed after DNS resolution. No existing Podman machine or connection was changed; no image pull or smoke test was attempted. Rootless operation is therefore unverified. The Containerfiles and wrappers are implementation artifacts, not verified build capabilities. Archiso container build, Nix container sandbox build, ISO generation, UEFI boot, and CI Podman support remain **NOT TESTED**.
 
+## Sprint 0.3 operator-reported WSL2 experiment
+
+The operator supplied a separate runtime experiment from local rootless Podman 5.7.0 on Ubuntu 26.04 WSL2 with kernel 6.18.33.2. Its date and raw command transcripts were not included, so this is recorded as supplied evidence rather than an independently reproduced test. The detailed record is [PODMAN-WSL2-NAMESPACE-SECURITY-01](../../experiments/containers/results/sprint-0.3-wsl2-namespace-security.json).
+
+| Test | Reported result |
+| --- | --- |
+| Local rootless Podman; host user namespaces; rootless container execution | PASSED |
+| Read-only source bind and writable output bind mounts | PASSED |
+| Nested user namespace with Podman's default capabilities and `no-new-privileges` | PASSED |
+| Nested mount namespace and private tmpfs | PASSED |
+| Nested user namespace with `--cap-drop=ALL` | FAILED |
+| Nested user namespace with SETUID+SETGID | FAILED |
+| Nested user namespace with SETUID+SETGID+SETPCAP | FAILED |
+
+The observed incompatible setting is `--cap-drop=ALL`. The evidence does not isolate which individual default capability is necessary, and the tested capability additions did not restore nested namespace creation. It therefore does not support replacing the runtime default set with a hand-picked set. Aether keeps two profiles: strict `standard` isolation drops all capabilities and disables networking, while the builders that require nested namespaces use `nested-namespace`, which retains Podman's version-specific rootless defaults without adding capabilities. Both retain `no-new-privileges`; the namespace-dependent profile also leaves default seccomp and host LSM enforcement intact and uses an explicit bridge network, not host networking. Its in-container probe blocks if `CAP_SYS_ADMIN` appears in any capability set. This modifies only the builder container process policy; it does not change host configuration. The in-container probe remains required before either builder script can run.
+
+This experiment did not build Archiso or NixOS, evaluate the Nix sandbox, generate an ISO, or boot a VM. Those outcomes remain **NOT TESTED**. Preserving Podman's runtime-default capabilities increases the builder's container-level permissions compared with the standard profile, and those defaults vary by Podman version; the exact version is recorded in builder metadata for review.
+
+The earlier Windows CLI observation above is a separate historical host session. It is not contradicted by the supplied Ubuntu WSL2 result, which reports a working local rootless runtime in that Linux environment. The current PowerShell host's Podman, WSL access, and nested namespace behavior have not been tested as part of Sprint 0.3.
+
 ## Primary sources
 
 - [Archiso project requirements and image workflow](https://github.com/archlinux/archiso)

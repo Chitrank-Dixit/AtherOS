@@ -302,6 +302,15 @@ class ExperimentRecordTests(unittest.TestCase):
             with self.subTest(path=path.name):
                 self.assertEqual([], validator.validate(path, SCHEMA))
 
+    def test_sprint_0_3_podman_evidence_record_is_schema_valid_and_limited(self) -> None:
+        path = ROOT / "experiments/containers/results/sprint-0.3-wsl2-namespace-security.json"
+        self.assertEqual([], validator.validate(path, SCHEMA))
+        self.assertIn(path, validator.record_paths())
+        record = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual("PASSED", record["status"])
+        self.assertEqual("NOT TESTED", record["build_status"])
+        self.assertTrue(any("not independently reproduce" in item for item in record["limitations"]))
+
     def test_passed_record_requires_evidence(self) -> None:
         source = ROOT / "tests/fixtures/experiment-records/passed.example.json"
         record = json.loads(source.read_text(encoding="utf-8"))

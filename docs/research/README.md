@@ -8,4 +8,4 @@ Sprint 0.1 build environment: [assessment](sprint-0.1-build-environment-assessme
 
 Container infrastructure: [Podman build environments](../guides/podman-build-environments.md) and [ADR-007](../adr/ADR-007-container-runtime.md).
 
-Podman build feasibility: [research assessment](podman-build-feasibility.md); implementation review: [Sprint 0.1 audit](sprint-0.1-implementation-audit.md).
+Podman build feasibility and Sprint 0.3 security-profile evidence: [research assessment](podman-build-feasibility.md); machine-readable WSL2 namespace evidence: [experiment record](../../experiments/containers/results/sprint-0.3-wsl2-namespace-security.json); implementation review: [Sprint 0.1 audit](sprint-0.1-implementation-audit.md).
