@@ -9,8 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from jsonschema.exceptions import SchemaError
-from jsonschema import Draft202012Validator
+import jsonschema.exceptions
 
 
 STAGE_STATUSES = ("PASSED", "FAILED", "BLOCKED", "NOT TESTED")
@@ -73,9 +72,9 @@ def create_record(values: dict[str, Any]) -> dict[str, Any]:
 def write_record(path: Path, schema_path: Path, values: dict[str, Any]) -> bool:
     """Validate the complete record before atomically writing it; return evidence completeness."""
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    Draft202012Validator.check_schema(schema)
+    jsonschema.Draft202012Validator.check_schema(schema)
     record = create_record(values)
-    errors = list(Draft202012Validator(schema).iter_errors(record))
+    errors = list(jsonschema.Draft202012Validator(schema).iter_errors(record))
     if errors:
         raise ValueError("; ".join(error.message for error in errors))
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -113,7 +112,13 @@ def main() -> int:
     args = parser.parse_args()
     try:
         complete = write_record(args.record, args.schema, vars(args))
-    except (OSError, UnicodeError, json.JSONDecodeError, SchemaError, ValueError) as exc:
+    except (
+        OSError,
+        UnicodeError,
+        json.JSONDecodeError,
+        jsonschema.exceptions.SchemaError,
+        ValueError,
+    ) as exc:
         parser.error(f"record generation or schema validation failed: {exc}")
     return 0 if complete else 1
 

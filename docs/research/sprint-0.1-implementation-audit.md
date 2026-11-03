@@ -2,14 +2,14 @@
 
 **Audit date:** 2026-11-03  
 **Branch:** `research/build-environment`  
-**Reviewed commit:** `1f647b89348b3afca61e90d7bbd209c6c0319543`
-**Worktree at start of review remediation:** clean. Changes described below are now uncommitted; no commit, push, merge, reset, or cleanup performed.
+**Reviewed commit:** `3be9b87481796dccceb6706991d11954754f1408`
+**Worktree at start of this remediation:** clean on `research/build-environment`. This pass's import-order correction and report updates are local and uncommitted.
 
 ## Summary
 
-The working tree contains substantial Sprint 0.1 implementation artifacts, including Arch/Nix build wrappers, diagnostics, a QEMU live-ISO harness, experiment records, documentation, and Podman builders. These artifacts have not established successful ISO builds or boots. The host has a Podman CLI, but the existing Podman machine is unreachable and its configured default is a root connection. Rootless mode and container execution are therefore unverified. No Podman machine, connection, image, volume, or container was modified.
+The reviewed branch contains Sprint 0.1 implementation artifacts, including Arch/Nix build wrappers, diagnostics, a QEMU live-ISO harness, experiment records, documentation, and Podman builders. CI at the reviewed commit passed the Validate workflow and all Lint jobs except Ruff's Python lint job. CI unit tests, repository validation, JSON Schema validation, ShellCheck, Pyright, YAML lint, and Markdown lint passed. This is CI evidence; it does not establish that these checks passed in the local Windows environment. No successful ISO build or boot has been established.
 
-The checked-out branch is `research/build-environment` and tracks `origin/research/build-environment`. It began at the reviewed commit with a clean worktree. The current remediation changes are focused on the review findings and have not been committed.
+The checked-out branch is `research/build-environment` and tracks `origin/research/build-environment`. It began at reviewed commit `3be9b87481796dccceb6706991d11954754f1408` with a clean worktree. The focused Ruff import-order and report corrections in this pass remain uncommitted and have not been CI-validated.
 
 ## Implemented functionality
 
@@ -17,7 +17,7 @@ The checked-out branch is `research/build-environment` and tracks `origin/resear
 - **NixOS experiment:** the wrapper requires Nix, Linux, checksum utilities, a disposable acknowledgement, a VM signal (or the explicit Podman wrapper marker), and `flake.lock`. It records Nix/flakes metadata and locked nixpkgs revision, separates evaluation from build, captures logs and checksums, and keeps sandboxing enabled with sandbox fallback disabled.
 - **Podman:** separate Arch and Nix OCI Containerfiles exist. Runtime checks require local rootless Podman and check subordinate IDs and user namespaces. Build wrappers mount source read-only and a separate artifact directory read-write, drop container capabilities, set no-new-privileges, avoid host sockets and Compose, record Podman/image details, and use `--rm` only for their own temporary build container.
 - **UEFI:** a QEMU/OVMF live-ISO harness records ISO and firmware hashes, resources, QEMU logs, and serial logs. It creates no virtual disk; it does not itself establish that the observed guest reached each requested boot milestone.
-- **Records and reporting:** the JSON Schema adds build/boot, distribution, checksum, firmware, VM, logs, and blocker fields with status conditions. There are examples for each status. The current worktree now uses a shared pinned Draft 2020-12 validator for CI and report generation; this has not yet run.
+- **Records and reporting:** the JSON Schema adds build/boot, distribution, checksum, firmware, VM, logs, and blocker fields with status conditions. There are examples for each status. The shared pinned Draft 2020-12 validator passed in both the Lint schema job and the Validate workflow at the reviewed commit.
 - **Documentation:** architecture, build, UEFI, Podman, licensing, assessment, feasibility, and results documents exist. ADR-001 still leaves the base distribution unselected; the Podman runtime decision is documented as accepted.
 
 ## Findings and gaps
@@ -25,7 +25,7 @@ The checked-out branch is `research/build-environment` and tracks `origin/resear
 1. **Resolved — ADR identifier collision:** `ADR-002-desktop-environments.md` already exists. The Podman decision now uses `ADR-007-container-runtime.md`, and the new references point to ADR-007.
 2. **Resolved during this audit — README placement:** the Sprint 0.1 links are integrated in the existing “Start here” list; no duplicate title was retained.
 3. **Resolved during this audit — stale status reports:** this audit and the results report now reflect the checked-out branch, current Windows diagnostic output, and current Podman/WSL access failures.
-4. **Resolved in current worktree — report validation:** record validation and report generation now use the pinned `jsonschema` Draft 2020-12 implementation; this change has not yet run locally or in CI.
+4. **Resolved and CI-verified — report validation:** record validation and report generation use the pinned `jsonschema` Draft 2020-12 implementation. Schema validation passed in the Lint workflow and repository validation in the Validate workflow at the reviewed commit. Local execution remains unavailable.
 5. **Resolved during this audit — Nix result-link collision:** the Nix wrapper now refuses an existing output directory or result-link path before writing.
 6. **Implemented in current worktree — failure metadata:** Nix failures now produce a stage-specific experiment record for prerequisite, metadata, evaluation, build, artifact discovery, checksum, and metadata-generation stages. Arch records build and evidence statuses separately. These paths have not been exercised in a builder.
 7. **Podman does not run its own investigation checks:** the repository check script verifies the engine, rootless flag, remote flag, subordinate IDs, and namespace probes; the requested Windows read-only diagnostics separately query machine state. The current command-line connection and engine results below are current host observations, not evidence that the Linux builder wrappers work.
@@ -55,7 +55,9 @@ All listed Podman commands were read-only.
 - PowerShell JSON parsing for the schema and eight JSON fixtures: passed. This checks JSON syntax only, not schema conformance.
 - Repository validation: required-file checks and shell syntax passed, then stopped at Python compilation because the WindowsApps `python3` executable returned Permission denied.
 - Direct Nix artifact-helper smoke testing in Git Bash was attempted, but the Windows filesystem symlink created by `ln -s` was not recognized by Bash as a symlink (`-L` false). The Linux symlink-based unit cases are therefore NOT TESTED on this host.
-- Current remediation unit tests, actual JSON Schema validation, Markdown lint, Ruff, Pyright, ShellCheck, yamllint, ISO builds, and VM boots: NOT TESTED because their required tools or engine are unavailable.
+- At reviewed commit `3be9b87481796dccceb6706991d11954754f1408`, the [Validate workflow](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41663324521) passed, including repository validation and all unit tests. The [Lint workflow](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41663324475) passed its JSON Schema, Markdown, YAML, ShellCheck, and Pyright jobs and failed only at Ruff import ordering.
+- Local Ruff, Pyright, unit tests, JSON Schema validation, ShellCheck, Markdown lint, and YAML lint remain NOT TESTED because their tools are unavailable or inaccessible in the Windows environment. The local Ruff correction in this pass is not covered by the cited CI run.
+- Arch/Nix ISO builds and UEFI boots: BLOCKED / NOT TESTED; no suitable builder, reviewed Nix lock, generated ISO, or disposable UEFI test environment is available.
 
 ## Acceptance criteria
 
@@ -69,20 +71,20 @@ All listed Podman commands were read-only.
 | AC-06 NixOS ISO builds | BLOCKED | Depends on a generated/reviewed lock and isolated Nix builder. |
 | AC-07 Arch ISO boots in UEFI VM | BLOCKED | No ISO or available disposable UEFI VM. |
 | AC-08 NixOS ISO boots in UEFI VM | BLOCKED | No ISO or available disposable UEFI VM. |
-| AC-09 Experiment schema validates | NOT TESTED | Full Draft 2020-12 validation is now implemented and pinned; the validator could not execute locally. |
-| AC-10 CI checks pass | NOT TESTED | No CI run was triggered for the working tree. |
+| AC-09 Experiment schema validates | PASSED | Draft 2020-12 validation passed in both [Lint run 11](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41663324475) and [Validate run 11](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41663324521). |
+| AC-10 CI checks pass | FAILED | Validate run 11 passed. Lint run 11 failed only at Ruff import ordering; its Markdown, YAML, ShellCheck, Pyright, and JSON Schema jobs passed. |
 | AC-11 Results are documented | PASSED | `sprint-0.1-results.md` and this audit summarize current observations and explicitly mark unavailable checks. |
 
 ## Security and architectural assessment
 
-The wrappers correctly refuse remote/rootful Podman and do not start existing machines. The live ISO harness attaches no disk, and no privileged container or host socket is requested. The Nix wrapper fails closed instead of disabling sandboxing. Container images, nested namespaces, artifact mounts, or Nix sandbox execution have not been exercised; do not describe these paths as verified. Continue using an explicitly disposable Linux VM when rootless namespace or sandbox requirements fail. The base distribution remains unresolved and requires human approval.
+The wrappers correctly refuse remote/rootful Podman and do not start existing machines. Rootless Podman on this development machine is NOT TESTED. The live ISO harness attaches no disk, and no privileged container or host socket is requested. The Nix wrapper fails closed instead of disabling sandboxing. Container images, nested namespaces, artifact mounts, or Nix sandbox execution have not been exercised; do not describe these paths as verified. Arch/Nix ISO builds and UEFI boots remain BLOCKED / NOT TESTED, and physical NVIDIA validation is NOT TESTED. The Nix `flake.lock` is absent. The base distribution decision remains NOT DECIDED and requires human approval.
 
-## Review-remediation changes in this worktree
+## Review-remediation implementation and verification
 
-- Optional experiment properties are now checked against required and allowed keys, with actual Draft 2020-12 validation. The pinned validator is shared by CI and report generation.
-- Nix artifact discovery recursively finds regular ISO files under the resolved result symlink, rejects targets outside `/nix/store`, requires exactly one artifact, and records its relative path. Focused tests were added but are NOT TESTED locally because Python is unavailable.
+- Optional experiment properties are now checked against required and allowed keys, with actual Draft 2020-12 validation. The pinned validator is shared by CI and report generation; validation passed in both relevant CI paths at the reviewed commit.
+- Nix artifact discovery recursively finds regular ISO files under the resolved result symlink, rejects targets outside `/nix/store`, requires exactly one artifact, and records its relative path. The Validate workflow's unit tests passed at the reviewed commit.
 - Arch container preparation requires a digest-pinned official base image with a tag date matching the Archive date. It uses `pacman -Sy --needed`, records the mixed bootstrap/snapshot limitation, and separates build, artifact, checksum, and package-manifest status. Missing or incomplete manifests fail evidence validation.
 - Nix build records capture failure stages. UEFI records leave all guest milestones NOT TESTED until an operator verifies them; QEMU exit status does not imply boot success.
 - Architecture and Podman guide references now point to ADR-007.
 
-These are implementation changes, not verified CI or build results. Shell syntax and `git diff --check` pass; repository validation reaches required-file and syntax checks, then cannot access the WindowsApps Python alias. No CI run can include this unpushed worktree, and no push was performed.
+The CI statements above apply to reviewed commit `3be9b87481796dccceb6706991d11954754f1408`; they do not verify the local import-order correction in this pass. The local Windows Python alias is inaccessible, and Ruff is unavailable locally. ISO builds and UEFI boot tests remain BLOCKED/NOT TESTED.
