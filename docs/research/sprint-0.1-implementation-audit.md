@@ -2,14 +2,14 @@
 
 **Audit date:** 2026-11-03  
 **Branch:** `research/build-environment`  
-**Reviewed PR head:** `efb8e84a33bd683b213305ec8d8b7872ec362981`
+**Reviewed PR head:** `47ce134216ca97d5428fdd31fde64db2fe6acf35`
 **Worktree at start of this remediation:** clean on `research/build-environment`, tracking the reviewed PR head.
 
 ## Summary
 
-The reviewed branch contains Sprint 0.1 implementation artifacts, including Arch/Nix build wrappers, diagnostics, a QEMU live-ISO harness, experiment records, documentation, and Podman builders. At PR head `efb8e84a33bd683b213305ec8d8b7872ec362981`, both [Validate #15](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41676445219) and [Lint #15](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41676445155) passed. Validate included repository validation and all unit tests; Lint passed Ruff, Pyright, ShellCheck, Markdown, YAML, and JSON Schema checks. These CI results do not establish local Windows/WSL validation. No successful ISO build or boot has been established.
+The reviewed branch contains Sprint 0.1 implementation artifacts, including Arch/Nix build wrappers, diagnostics, a QEMU live-ISO harness, experiment records, documentation, and Podman builders. At PR head `47ce134216ca97d5428fdd31fde64db2fe6acf35`, both [Validate #17](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41678238298) and [Lint #17](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41678238332) passed. Validate included repository validation and lightweight unit tests; Lint passed Ruff, Pyright, ShellCheck, Markdown, YAML, and JSON Schema checks. These CI results do not establish local Windows/WSL validation. No successful ISO build or boot has been established.
 
-The checked-out branch is `research/build-environment` and tracks `origin/research/build-environment` at reviewed PR head `efb8e84a33bd683b213305ec8d8b7872ec362981`.
+The checked-out branch is `research/build-environment` and tracks `origin/research/build-environment` at reviewed PR head `47ce134216ca97d5428fdd31fde64db2fe6acf35`.
 
 ## Implemented functionality
 
@@ -55,7 +55,7 @@ All listed Podman commands were read-only.
 - PowerShell JSON parsing for the schema and eight JSON fixtures: passed. This checks JSON syntax only, not schema conformance.
 - Repository validation: required-file checks and shell syntax passed, then stopped at Python compilation because the WindowsApps `python3` executable returned Permission denied.
 - Direct Nix artifact-helper smoke testing in Git Bash was attempted, but the Windows filesystem symlink created by `ln -s` was not recognized by Bash as a symlink (`-L` false). The Linux symlink-based unit cases are therefore NOT TESTED on this host.
-- At PR head `efb8e84a33bd683b213305ec8d8b7872ec362981`, [Validate #15](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41676445219) and [Lint #15](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41676445155) both passed. Validate passed repository validation and unit tests. Lint passed Ruff, Pyright, ShellCheck, Markdown, YAML, and JSON Schema validation. This CI evidence does not imply that local Windows/WSL checks passed; local tooling remains unavailable or inaccessible as described above.
+- At PR head `47ce134216ca97d5428fdd31fde64db2fe6acf35`, [Validate #17](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41678238298) and [Lint #17](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41678238332) both passed. Validate passed repository validation and lightweight unit tests. Lint passed Ruff, Pyright, ShellCheck, Markdown, YAML, and JSON Schema validation. This CI evidence does not imply that local Windows/WSL checks passed; local tooling remains unavailable or inaccessible as described above.
 - Arch/Nix ISO builds and UEFI boots: BLOCKED / NOT TESTED; no suitable builder, reviewed Nix lock, generated ISO, or disposable UEFI test environment is available.
 
 ## Acceptance criteria
@@ -70,8 +70,8 @@ All listed Podman commands were read-only.
 | AC-06 NixOS ISO builds | BLOCKED | Depends on a generated/reviewed lock and isolated Nix builder. |
 | AC-07 Arch ISO boots in UEFI VM | BLOCKED | No ISO or available disposable UEFI VM. |
 | AC-08 NixOS ISO boots in UEFI VM | BLOCKED | No ISO or available disposable UEFI VM. |
-| AC-09 Experiment schema validates | PASSED | Draft 2020-12 validation passed in both [Lint #15](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41676445155) and [Validate #15](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41676445219). |
-| AC-10 CI checks pass | PASSED | Both [Validate #15](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41676445219) and [Lint #15](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41676445155) passed on the reviewed PR head. |
+| AC-09 Experiment schema validates | PASSED | Draft 2020-12 validation passed in both [Lint #17](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41678238332) and [Validate #17](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41678238298). |
+| AC-10 CI checks pass | PASSED | Both [Validate #17](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41678238298) and [Lint #17](https://github.com/Chitrank-Dixit/AtherOS/actions/runs/41678238332) passed on the reviewed PR head. |
 | AC-11 Results are documented | PASSED | `sprint-0.1-results.md` and this audit summarize current observations and explicitly mark unavailable checks. |
 
 ## Security and architectural assessment
@@ -85,6 +85,6 @@ The wrappers correctly refuse remote/rootful Podman and do not start existing ma
 - Arch container preparation requires a digest-pinned official base image with a tag date matching the Archive date. It uses `pacman -Sy --needed`, records the mixed bootstrap/snapshot limitation, and separates build, artifact, checksum, and package-manifest status. Missing or incomplete manifests fail evidence validation.
 - Nix build records capture failure stages. UEFI records leave all guest milestones NOT TESTED until an operator verifies them; QEMU exit status does not imply boot success.
 - Architecture and Podman guide references now point to ADR-007.
-- Ruff's I001 import-block formatting issue in `scripts/experiments/arch_build_result.py` was corrected; Ruff passed in Lint #15 on the reviewed PR head.
+- Ruff's I001 import-block formatting issue in `scripts/experiments/arch_build_result.py` was corrected; Ruff passed in Lint #17 on the reviewed PR head.
 
-The CI statements above apply to PR head `efb8e84a33bd683b213305ec8d8b7872ec362981`. Local Windows Python and Ruff execution remain unavailable or inaccessible; passing CI is not a local validation result. ISO builds and UEFI boot tests remain BLOCKED/NOT TESTED.
+The CI statements above apply to PR head `47ce134216ca97d5428fdd31fde64db2fe6acf35`. Local Windows Python and Ruff execution remain unavailable or inaccessible; passing CI is not a local validation result. ISO builds and UEFI boot tests remain BLOCKED/NOT TESTED.
