@@ -14,7 +14,9 @@ required=(README.md ROADMAP.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md LI
   scripts/podman/probe-builder-namespaces.sh scripts/podman/prepare-builders.sh \
   scripts/podman/run-build.sh experiments/containers/archiso/Containerfile \
   experiments/containers/nixos/Containerfile docs/guides/podman-build-environments.md \
-  docs/adr/ADR-007-container-runtime.md)
+  docs/adr/ADR-007-container-runtime.md scripts/experiments/find-nixos-iso.sh \
+  scripts/experiments/arch_snapshot.py scripts/experiments/arch_evidence.py requirements-dev.txt \
+  tests/unit/test_repository_tools.py tests/unit/test_experiment_records.py)
 failed=0
 for path in "${required[@]}"; do
   if [[ -f "$path" ]]; then printf 'OK %s\n' "$path"; else printf 'MISSING %s\n' "$path" >&2; failed=1; fi
@@ -24,8 +26,7 @@ if (( failed )); then echo 'Repository structure validation failed.' >&2; exit 1
 while IFS= read -r -d '' script; do bash -n "$script"; done < <(find scripts experiments -type f -name '*.sh' -print0)
 echo 'Shell syntax: passed.'
 if command -v python3 >/dev/null 2>&1; then
-  python3 -m py_compile scripts/generate-report.py
-  python3 -m py_compile scripts/experiments/validate-records.py scripts/experiments/generate-results-report.py
+  python3 -m compileall -q scripts
   python3 -m json.tool schemas/experiment-record.schema.json >/dev/null
   python3 scripts/experiments/validate-records.py
   echo 'Python and JSON syntax: passed.'

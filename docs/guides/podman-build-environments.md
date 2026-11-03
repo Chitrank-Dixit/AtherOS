@@ -1,10 +1,10 @@
 # Rootless Podman build environments
 
-Podman is Aether's accepted primary local container runtime (ADR-002). Each builder is one container; Podman Compose is not used because there are no cooperating services. The definitions use OCI-compatible `Containerfile` instructions. Docker is not required or used.
+Podman is Aether's accepted primary local container runtime ([ADR-007](../adr/ADR-007-container-runtime.md)). Each builder is one container; Podman Compose is not used because there are no cooperating services. The definitions use OCI-compatible `Containerfile` instructions. Docker is not required or used.
 
 ## Security and technical requirements
 
-- Podman must already be installed and configured by the user or administrator. Follow the [official installation instructions](https://podman.io/docs/installation) for the selected Linux distribution. Aether scripts do not install packages, initialize Podman machines, switch connections, or alter subordinate ID files.
+- Podman and Python 3 must already be installed and configured by the user or administrator. Follow the [official installation instructions](https://podman.io/docs/installation) for the selected Linux distribution. Aether scripts do not install packages, initialize Podman machines, switch connections, or alter subordinate ID files.
 - Run local Linux Podman as a non-root user. Rootless Podman normally requires subordinate UID/GID ranges in `/etc/subuid` and `/etc/subgid`; the local diagnostic checks without editing them. Consult the [Podman rootless documentation](https://docs.podman.io/en/latest/markdown/podman.1.html#rootless-mode) and have an administrator resolve missing ranges.
 - The Linux host needs user namespaces, a supported OCI runtime (`crun` or `runc`), a rootless networking backend for package downloads, and a storage filesystem supported by rootless Podman. `fuse-overlayfs` may be required for some kernels/filesystems. The diagnostic does not install or configure these components.
 - The build scripts reject a remote Podman service. This avoids unintentionally changing an existing Podman machine or remote builder. Windows Podman commonly uses a Linux VM backend; select a dedicated disposable Linux VM explicitly, then run the workflow in that guest. The scripts do not initialize or alter that VM.
@@ -24,10 +24,10 @@ It reports the Podman version, rootless/local service status, subordinate IDs, a
 
 ## Prepare the images (separate from builds)
 
-Choose and record a deliberate Arch Archive date. The Arch builder starts from the dated official `archlinux/archlinux:base-devel-20261102.0.620672` image and installs archiso from the selected Archive snapshot. Its resulting OCI digest and Archiso version are recorded during each build. The Nix builder starts from the NixOS project's Nix 2.35.4 `linux/amd64` image pinned to `sha256:05fe61395588e8a11452e9ba4602d4f0eb0ce5db8f7b9fa417c4ec07af79ca42`.
+Choose an Arch Archive date and an official dated base image reference pinned by an OCI digest. The date encoded in the base image tag must match the selected Archive date. Obtain and review a real digest from the registry; the repository does not supply or invent one. The base image is an independent bootstrap input. The selected Archive provides package repositories for archiso installation and the ISO package set, but package state already present in the bootstrap image may not originate from that Archive. The builder uses `pacman -Sy --needed` and never relies on `pacman -Syyu` to downgrade packages. This remains an experimental mixed-input build, and binary reproducibility is not claimed. The Nix builder starts from the NixOS project's Nix 2.35.4 `linux/amd64` image pinned to `sha256:05fe61395588e8a11452e9ba4602d4f0eb0ce5db8f7b9fa417c4ec07af79ca42`.
 
 ```bash
-make podman-prepare-arch ARCHIVE_DATE=2026/11/02
+make podman-prepare-arch ARCHIVE_DATE=YYYY/MM/DD ARCH_BASE_IMAGE='archlinux/archlinux:<matching-dated-tag>@sha256:<reviewed-digest>'
 make podman-prepare-nixos
 ```
 
@@ -45,7 +45,7 @@ make podman-build-arch-iso PROFILE=minimal
 make podman-build-arch-iso PROFILE=desktop-gnome
 ```
 
-The profile is mounted read-only. Build output is in a unique ignored `out/podman/arch/` directory; logs, checksums, build metadata, Podman version, image digest, and package manifest are retained there. A desktop package profile is not desktop-session evidence.
+The profile is mounted read-only. Build output is in a unique ignored `out/podman/arch/` directory; logs, checksums, build metadata, Podman version, builder image digest, base image tag/digest, archive date, and package manifest are retained there. The experiment record separates build, artifact, checksum, and manifest statuses. Missing or incomplete package databases make evidence validation fail even when mkarchiso itself succeeded. A desktop package profile is not desktop-session evidence.
 
 ## Build NixOS
 

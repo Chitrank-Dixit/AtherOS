@@ -15,6 +15,7 @@ check() {
 
 section 'Operating system'
 if [[ -r /etc/os-release ]]; then
+  # shellcheck source=/etc/os-release
   . /etc/os-release
   printf 'Distribution: %s\nVersion: %s\n' "${PRETTY_NAME:-unknown}" "${VERSION_ID:-unknown}"
 else

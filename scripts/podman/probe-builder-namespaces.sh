@@ -8,6 +8,8 @@ if [[ ! -f /.containerenv ]]; then
 fi
 tmpdir=$(mktemp -d /tmp/aether-ns-probe.XXXXXX)
 trap 'rmdir "$tmpdir" 2>/dev/null || true' EXIT
+# SC2016 is intentional: this body is evaluated by the child shell, where $1 is its mount path.
+# shellcheck disable=SC2016
 unshare --user --map-root-user --mount sh -eu -c '
   mount -t tmpfs -o nosuid,nodev,noexec tmpfs "$1"
   touch "$1/probe"

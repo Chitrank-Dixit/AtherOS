@@ -7,7 +7,7 @@
 
 The Archiso project documents regular non-root operation using `unshare` and kernel user namespace support. The image generator also creates filesystem trees, chroots, and ISO/EFI artifacts. Therefore a rootless Podman build depends on nested user/mount namespace support and writable artifact storage. Podman does not receive added capabilities in the proposed run command. A small nested namespace/tmpfs probe runs before Archiso; that probe is necessary but does not prove all later archiso operations will succeed. Build failures are retained and lead to the disposable Linux VM fallback.
 
-The Arch builder uses an official dated Arch `base-devel` image and installs `archiso` from a dated Arch Linux Archive snapshot. The final locally built builder OCI digest and exact `archiso` package version are recorded. This combination pins declared starting inputs; it is not a claim of bit-identical ISO output.
+The Arch builder requires an official dated Arch `base-devel` image reference pinned by digest; its tag date must match the explicit Arch Linux Archive date. The Archive provides package repositories for `archiso` installation and the ISO package set, but does not retroactively define every package in the bootstrap image. The build uses `pacman -Sy --needed`, not `pacman -Syyu` as a downgrade mechanism. This mixed input remains experimental. The built builder image digest, base reference/digest, Archiso version, and actual package manifest are recorded.
 
 ## Nix
 
@@ -23,7 +23,7 @@ SELinux labeling and the host filesystem can prevent the source/artifact bind mo
 
 ## Execution status
 
-The Windows Podman 6.0.2 CLI is present, but the engine is unreachable because the existing machine identity cannot be read. The default connection points to its root service. Direct TCP/443 checks to the required registries failed after DNS resolution. No existing Podman machine or connection was changed; no image pull or smoke test was attempted. Rootless operation is therefore unverified. The Containerfiles and wrappers are implementation artifacts, not verified build capabilities. Archiso container build, Nix container sandbox build, ISO generation, UEFI boot, and CI Podman support remain **NOT TESTED**.
+The Windows Podman 6.1.4 CLI is present, but the engine is unreachable because the existing machine identity cannot be read. The default connection points to its root service. Direct TCP/443 checks to the required registries failed after DNS resolution. No existing Podman machine or connection was changed; no image pull or smoke test was attempted. Rootless operation is therefore unverified. The Containerfiles and wrappers are implementation artifacts, not verified build capabilities. Archiso container build, Nix container sandbox build, ISO generation, UEFI boot, and CI Podman support remain **NOT TESTED**.
 
 ## Primary sources
 

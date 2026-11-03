@@ -27,9 +27,9 @@ validate-records: ## Validate experiment records and schema fixtures
 podman-env-check: ## Read-only check for a usable local rootless Podman runtime
 	@bash scripts/podman/check-runtime.sh --require-local-rootless
 
-podman-prepare-arch: ## Prepare the Archiso builder image (pass ARCHIVE_DATE=YYYY/MM/DD)
-	@test -n "$(ARCHIVE_DATE)" || { echo 'Set ARCHIVE_DATE=YYYY/MM/DD.' >&2; exit 2; }
-	@bash scripts/podman/prepare-builders.sh arch "$(ARCHIVE_DATE)"
+podman-prepare-arch: ## Prepare Archiso builder (ARCHIVE_DATE and digest-pinned ARCH_BASE_IMAGE required)
+	@test -n "$(ARCHIVE_DATE)" -a -n "$(ARCH_BASE_IMAGE)" || { echo 'Set ARCHIVE_DATE=YYYY/MM/DD and ARCH_BASE_IMAGE=archlinux/archlinux:<dated-tag>@sha256:<digest>.' >&2; exit 2; }
+	@bash scripts/podman/prepare-builders.sh arch "$(ARCHIVE_DATE)" "$(ARCH_BASE_IMAGE)"
 
 podman-prepare-nixos: ## Pull the digest-pinned Nix builder image
 	@bash scripts/podman/prepare-builders.sh nixos

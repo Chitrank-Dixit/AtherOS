@@ -38,8 +38,12 @@ if ! podman image exists "$image"; then
 fi
 if [[ $kind == arch ]]; then
   image_date=$(podman image inspect --format '{{ index .Labels "org.aether.archive-date" }}' "$image")
+  image_base=$(podman image inspect --format '{{ index .Labels "org.aether.base-image" }}' "$image")
   if [[ $image_date != "$archive_date" ]]; then
     echo "BLOCKED: Arch builder image snapshot label mismatch ($image_date != $archive_date)." >&2; exit 1
+  fi
+  if ! python3 "$repo_root/scripts/experiments/arch_snapshot.py" "$archive_date" "$image_base" >/dev/null; then
+    echo 'BLOCKED: Arch builder base image label is not a matching digest-pinned reference.' >&2; exit 1
   fi
 fi
 image_digest=$(podman image inspect --format '{{.Digest}}' "$image")
@@ -48,6 +52,10 @@ if [[ ! $image_digest =~ ^sha256:[0-9a-f]{64}$ ]]; then
   echo "BLOCKED: Podman did not report a valid OCI image digest for $image." >&2; exit 1
 fi
 podman_version=$(podman --version)
+base_image_digest=not-applicable
+if [[ ${image_base:-} =~ @sha256:([a-f0-9]{64})$ ]]; then
+  base_image_digest="sha256:${BASH_REMATCH[1]}"
+fi
 remote=$(podman info --format '{{.Host.ServiceIsRemote}}')
 rootless=$(podman info --format '{{.Host.Security.Rootless}}')
 if [[ $remote != false || $rootless != true ]]; then
@@ -67,6 +75,8 @@ container_image=$image
 container_image_digest=$image_digest
 container_image_id=$image_id
 archive_snapshot=${archive_date:-not-applicable}
+base_image_ref=${image_base:-not-applicable}
+base_image_digest=$base_image_digest
 source_mount=read-only
 artifact_mount=read-write
 container_privileged=false
@@ -80,12 +90,17 @@ run_args=(run --rm --pull=never --security-opt=no-new-privileges --cap-drop=ALL
   --env AETHER_BUILDER_IMAGE_DIGEST="$image_digest" --env AETHER_PODMAN_VERSION="$podman_version"
   --env AETHER_ARCHISO_DISPOSABLE=1 --env AETHER_NIXOS_DISPOSABLE=1
   --env AETHER_ARCHISO_REPO_SNAPSHOT="$archive_date"
+  --env AETHER_ARCH_BASE_IMAGE_REF="${image_base:-not-applicable}"
   --env AETHER_ARCHISO_OUT=/out --env AETHER_NIXOS_OUT=/out)
 if [[ $kind == arch ]]; then
+  # SC2016 is intentional: the child bash expands "$1" after Podman starts it.
+  # shellcheck disable=SC2016
   command=(-c 'bash /workspace/scripts/podman/probe-builder-namespaces.sh && bash /workspace/experiments/arch/scripts/build-iso.sh "$1"' _ "$profile")
 else
   # Evaluation is not a build. The existing build script runs only after this sandbox gate succeeds.
-  command=(-c 'nix --option sandbox true --option sandbox-fallback false --extra-experimental-features "nix-command flakes" eval --raw ./experiments/nixos#nixosConfigurations.aether-iso.config.system.build.isoImage.drvPath && bash /workspace/scripts/podman/probe-builder-namespaces.sh && bash /workspace/experiments/nixos/scripts/build-iso.sh')
+  # SC2016 is intentional: this whole string is the script for the container's bash process.
+  # shellcheck disable=SC2016
+  command=(-c 'nix --option sandbox true --option sandbox-fallback false --extra-experimental-features "nix-command flakes" eval --no-write-lock-file --raw ./experiments/nixos#nixosConfigurations.aether-iso.config.system.build.isoImage.drvPath && bash /workspace/scripts/podman/probe-builder-namespaces.sh && bash /workspace/experiments/nixos/scripts/build-iso.sh')
 fi
 set +e
 podman "${run_args[@]}" "$image" "${command[@]}" 2>&1 | tee "$out_dir/podman-run.log"

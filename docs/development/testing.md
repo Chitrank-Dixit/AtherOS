@@ -1,8 +1,20 @@
 # Testing and validation
 
+## Development dependencies
+
+Install the pinned JSON Schema validator before running the Python tests or record checks:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+make test
+make validate-records
+```
+
+The record validator, report generator, unit tests, and CI fixture job all use the same Draft 2020-12 schema through `jsonschema`.
+
 ## Repository checks
 
-`make validate` checks required structure and available Bash/Python/JSON syntax. `make test` runs standard-library unit tests for repository tooling and fixtures. CI runs these checks plus Ruff, Pyright, ShellCheck, markdownlint, yamllint, and JSON Schema validation without secrets.
+`make validate` checks required structure and available Bash/Python/JSON syntax, then validates experiment fixtures. `make test` runs Python `unittest` cases for repository tooling, record validation, snapshot inputs, and artifact discovery. CI runs these checks plus Ruff, Pyright, ShellCheck, markdownlint, and yamllint without secrets.
 
 ## Experiment evidence
 

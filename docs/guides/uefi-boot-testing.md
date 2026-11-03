@@ -17,15 +17,18 @@ export AETHER_QEMU_DISPOSABLE=1
 scripts/experiments/boot-iso-uefi.sh /path/to/image.iso /path/to/OVMF_CODE.fd /path/to/new-evidence-dir 4096 2
 ```
 
-The harness uses QEMU TCG, records its version, firmware and ISO SHA-256 digests, VM resources, serial output, and QEMU log. It does not infer boot success from QEMU's process exit code; record observed boot milestones separately. GTK display support is required to view the graphical bootloader. QEMU's user-mode network is attached for basic guest network checks.
+The harness uses QEMU TCG, records its version, firmware and ISO SHA-256 digests, VM resources, serial output, and QEMU log. QEMU's process exit status only describes QEMU itself and never sets boot status. After QEMU exits, the harness writes an experiment record with all guest milestones set to `NOT TESTED`; operators must update them from direct observations. GTK display support is required to view the graphical bootloader. QEMU's user-mode network is attached for basic guest network checks.
 
 For each distribution, record the QEMU version and command, firmware file/version or checksum, VM CPU and memory allocation, ISO SHA-256, UTC timestamp, serial/boot log, and observations for:
 
-1. Bootloader reached.
-2. Live environment started.
-3. Shell or login access available.
-4. Networking available where expected.
-5. Basic OS and kernel information collected.
+1. UEFI firmware initialized.
+2. Bootloader displayed.
+3. Kernel booted.
+4. Live environment reached.
+5. Shell or login access available.
+6. Networking available where expected.
+
+Use `PASSED`, `FAILED`, `BLOCKED`, or `NOT TESTED` for each key in `boot_milestones`. The accepted keys are `uefi_firmware_initialized`, `bootloader_displayed`, `kernel_booted`, `live_environment_reached`, `shell_available`, and `network_available`. A boot status of `PASSED` requires direct evidence for the milestones required by that experiment; the harness does not set it automatically.
 
 A live shell result is not desktop-session evidence. Virtual graphics are not physical NVIDIA compatibility evidence. Record each unchecked item as NOT TESTED and a missing required capability as BLOCKED.
 

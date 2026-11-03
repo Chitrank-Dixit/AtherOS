@@ -38,6 +38,9 @@ firmware_sha256=$(sha256sum "$firmware" | cut -d ' ' -f 1)
 qemu_version=$(qemu-system-x86_64 --version | head -n 1)
 printf 'timestamp_utc=%s\niso=%s\niso_sha256=%s\nfirmware=%s\nfirmware_sha256=%s\nqemu=%s\nmemory_mib=%s\ncpu_count=%s\n' \
   "$started" "$iso" "$iso_sha256" "$firmware" "$firmware_sha256" "$qemu_version" "$memory" "$cpus" > "$out_root/metadata.txt"
+printf 'command=qemu-system-x86_64 -machine q35,accel=tcg -cpu max -smp %s -m %s -drive pflash:readonly -cdrom %s -boot order=d -nic user -serial file:serial.log\n' \
+  "$cpus" "$memory" "$iso" >> "$out_root/metadata.txt"
+: > "$out_root/serial.log"
 
 echo 'Starting a live ISO with no writable virtual disk attached. Close the VM window to finish.'
 set +e
@@ -51,5 +54,38 @@ result=$?
 set -e
 printf 'qemu_exit_code=%s\n' "$result" >> "$out_root/metadata.txt"
 cat "$out_root/qemu.log"
+cat > "$out_root/experiment-record.json" <<EOF
+{
+  "id": "UEFI-$started",
+  "status": "NOT TESTED",
+  "environment": "Disposable Linux VM; see metadata.txt",
+  "distribution": "unknown; identify from ISO before recording final outcome",
+  "os_revision": "ISO SHA-256 $iso_sha256",
+  "package_revisions": [],
+  "commands": ["scripts/experiments/boot-iso-uefi.sh ISO_PATH OVMF_CODE.fd OUTPUT_ROOT MEMORY_MIB CPU_COUNT"],
+  "expected": "Boot ISO in UEFI and observe live environment milestones",
+  "actual": "QEMU exited with status $result; guest boot milestones require human verification",
+  "evidence": ["metadata.txt", "qemu.log", "serial.log"],
+  "limitations": ["QEMU process exit is not guest boot evidence; operator must record each milestone"],
+  "logs": ["metadata.txt", "qemu.log", "serial.log"],
+  "iso_sha256": "$iso_sha256",
+  "boot_status": "NOT TESTED",
+  "vm_configuration": {
+    "hypervisor": "QEMU TCG",
+    "architecture": "x86_64",
+    "cpu_count": $cpus,
+    "memory_mib": $memory,
+    "firmware": "$firmware_sha256"
+  },
+  "boot_milestones": {
+    "uefi_firmware_initialized": "NOT TESTED",
+    "bootloader_displayed": "NOT TESTED",
+    "kernel_booted": "NOT TESTED",
+    "live_environment_reached": "NOT TESTED",
+    "shell_available": "NOT TESTED",
+    "network_available": "NOT TESTED"
+  }
+}
+EOF
 printf 'Evidence directory: %s\n' "$out_root"
 exit "$result"

@@ -2,7 +2,7 @@
 
 ## Evidence status
 
-This report records the checked-out `research/build-environment` worktree as uncommitted and does not claim build or boot success without direct execution evidence. Windows-side diagnostics now run. WSL enumeration and the Podman engine remain inaccessible; no Linux ISO build or UEFI boot was attempted.
+This report records the checked-out `research/build-environment` worktree as uncommitted and does not claim build or boot success without direct execution evidence. Windows-side diagnostics run. WSL enumeration and the Podman engine remain inaccessible; no Linux ISO build or UEFI boot was attempted. The review-remediation code edits in this worktree have not yet been validated by CI.
 
 | Acceptance criterion | Status | Evidence / next step |
 | --- | --- | --- |
@@ -14,7 +14,7 @@ This report records the checked-out `research/build-environment` worktree as unc
 | AC-06 NixOS ISO builds | BLOCKED | Depends on a reviewed lock and disposable Nix builder. |
 | AC-07 Arch ISO boots in UEFI VM | BLOCKED | Requires a generated ISO and available QEMU/UEFI disposable VM. |
 | AC-08 NixOS ISO boots in UEFI VM | BLOCKED | Requires a generated ISO and available QEMU/UEFI disposable VM. |
-| AC-09 Experiment schema validates | NOT TESTED | Run schema validation after schema/fixture changes. |
+| AC-09 Experiment schema validates | NOT TESTED | A pinned full Draft 2020-12 validator and regression tests are implemented; execution is blocked by unavailable Python. |
 | AC-10 CI checks pass | NOT TESTED | No workflow run from this work is available. |
 | AC-11 Results documented | PASSED | This report and the implementation audit capture current statuses and blockers. |
 
@@ -28,4 +28,8 @@ Run the remaining repository checks in a Linux environment with Python and valid
 
 ## Podman infrastructure decision
 
-ADR-007 accepts Podman as the primary local container runtime. Independent OCI builder definitions and rootless run wrappers have been added for Archiso and NixOS. Podman is installed, but its engine is unreachable, the configured default is a root connection, and direct registry HTTPS checks failed. Rootless mode, nested namespaces, image preparation, and ISO builds remain NOT TESTED. See the [Podman feasibility assessment](podman-build-feasibility.md).
+ADR-007 accepts Podman as the primary local container runtime. Independent OCI builder definitions and rootless run wrappers have been added for Archiso and NixOS. The current Podman CLI reports 6.1.4, but its engine cannot read the machine identity; the configured default remains a root connection. WSL distro enumeration is denied. Rootless mode, nested namespaces, image preparation, and ISO builds remain NOT TESTED. See the [Podman feasibility assessment](podman-build-feasibility.md).
+
+## Review-remediation implementation status
+
+The current uncommitted worktree corrects optional-property assertions, routes record/report checks through the pinned Draft 2020-12 validator, adds schema and artifact-discovery regression tests, introduces recursive Nix ISO discovery with store-boundary checks, requires digest-pinned dated Arch base inputs for container builds, separates Arch build/artifact/checksum/manifest statuses, adds failure records, corrects ADR references, and emits a UEFI record template whose milestones remain NOT TESTED. These describe implementation only. Python tests, Ruff, Pyright, ShellCheck, Markdown/YAML lint, schema validation, and workflow runs remain NOT TESTED here because the tools are unavailable. Shell syntax for all 13 scripts and `git diff --check` passed; PowerShell parsed 9 JSON files; repository validation stops at the inaccessible Python alias. The direct helper smoke attempt could not exercise Linux symlink behavior under Git Bash on Windows.
